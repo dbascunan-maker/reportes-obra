@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#72b106",
+                        "primary-light": "#a2d216",
+                        "background-light": "#f8faf4",
+                        "background-dark": "#1a1f12",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .a4-container {
+            width: 210mm;
+            min-height: 297mm;
+            margin: auto;
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+
+<body class="bg-background-light dark:bg-background-dark py-10 px-4">
+    <!-- PDF Cover Container (A4 Aspect Ratio) -->
+    <div class="a4-container relative overflow-hidden flex flex-col bg-[#ffffff]">
+        <!-- Decorative Top Bar -->
+        <div class="h-3 w-full bg-primary"></div>
+        <!-- Header Section -->
+        <header class="flex items-center justify-between px-16 py-12">
+            <div class="flex items-center gap-3">
+                <div class="size-14 flex items-center justify-center">
+                    <svg viewBox="0 0 48 48" class="h-full w-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="24" r="22" fill="#72b106" opacity="0.15" />
+                        <circle cx="24" cy="20" r="8" fill="#72b106" />
+                        <path d="M12 36c0-6.627 5.373-12 12-12s12 5.373 12 12" fill="#72b106" opacity="0.3" />
+                        <path d="M24 8l2 4-2 2-2-2z" fill="#f97415" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-[#1c130d] text-xl font-extrabold leading-tight tracking-tight uppercase">
+                        Sustentambiente</h2>
+                    <p class="text-primary text-xs font-bold tracking-widest uppercase">Energía Solar</p>
+                </div>
+            </div>
+            <div class="flex gap-4">
+                <div class="text-right">
+                    <p class="text-xs text-slate-400 font-medium">DOCUMENTO OFICIAL</p>
+                    <p class="text-sm font-bold text-slate-800">REF: ITO-2023-1024</p>
+                </div>
+            </div>
+        </header>
+        <!-- Hero Content Section -->
+        <main class="flex-1 px-16 flex flex-col justify-center relative z-10">
+            <!-- Title Group -->
+            <div class="mb-12">
+                <div class="w-20 h-1.5 bg-primary mb-6"></div>
+                <h1 class="text-[#1c130d] text-6xl font-black leading-[1.1] tracking-tight mb-4">
+                    Informe de <br />
+                    <span class="text-primary">Inspección Técnica</span> <br />
+                    de Obra
+                </h1>
+                <h2 class="text-slate-500 text-2xl font-medium tracking-tight border-l-4 border-slate-200 pl-4 mt-8">
+                    Proyecto: Residencia San Ángel #1024
+                </h2>
+            </div>
+            <!-- Metadata Grid -->
+            <div class="grid grid-cols-1 gap-8 max-w-2xl mt-8">
+                <div class="flex items-start gap-4 p-5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="text-primary mt-1">
+                        <span class="material-symbols-outlined">calendar_today</span>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Fecha de Inspección
+                        </p>
+                        <p class="text-slate-800 text-lg font-semibold">24 Oct, 2023</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4 p-5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="text-primary mt-1">
+                        <span class="material-symbols-outlined">engineering</span>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Inspector Responsable
+                        </p>
+                        <p class="text-slate-800 text-lg font-semibold">Ing. Roberto Méndez García</p>
+                    </div>
+                </div>
+                <div class="flex items-start gap-4 p-5 bg-slate-50 rounded-xl border border-slate-100">
+                    <div class="text-primary mt-1">
+                        <span class="material-symbols-outlined">location_on</span>
+                    </div>
+                    <div>
+                        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Ubicación</p>
+                        <p class="text-slate-800 text-lg font-semibold">Residencia San Ángel #1024, Ciudad de México</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+        <!-- Subtle Background Image / Watermark -->
+        <div class="absolute bottom-0 right-0 w-2/3 h-2/3 opacity-10 pointer-events-none -z-0">
+            <div class="w-full h-full bg-cover bg-no-repeat grayscale"
+                data-alt="Modern solar panels on a construction site roof"
+                style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCpgZMXKCFGwmvvbJ1V5S91bAb-bWYue3WVd6bPaH3-f_0RmNAd7K2_cQmbe-PX6OTsyYlsxsFZ2Z7Lgc0XYTPmftIFaYTzXtYVWU1n-2h7T9a2hSNJHCT7qIuQ72E4RMmrUKPZXHgsyHFcLy1G0elOV4j6y22B4BhgDc0-vZR1kukPHXH1uUcuCzqd2JafGYcP0Y8jCn-LBJ_TPINBcutQ_JoKGvzEt9XURUOB9zFB9pScGaI1-MFqfCX3xTWp3XVHUrk5uyXjHX8');">
+            </div>
+        </div>
+        <!-- Decorative Elements -->
+        <div class="absolute -bottom-20 -left-20 size-64 bg-primary/5 rounded-full blur-3xl"></div>
+        <!-- Footer Section -->
+        <footer class="px-16 py-12 border-t border-slate-100 flex justify-between items-end relative z-10">
+            <div class="space-y-2">
+                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-none">Departamento de
+                    Calidad</p>
+                <p class="text-[10px] text-slate-400 font-medium">Este documento contiene información confidencial y
+                    propiedad intelectual de la empresa.</p>
+            </div>
+            <div class="flex gap-4">
+                <div class="flex flex-col items-center">
+                    <div class="w-32 h-1 mb-4 bg-primary-light/30"></div>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase">Firma del Supervisor</p>
+                </div>
+                <div class="flex flex-col items-center">
+                    <div class="w-32 h-1 mb-4 bg-primary-light/30"></div>
+                    <p class="text-[10px] font-bold text-slate-500 uppercase">Sello de Obra</p>
+                </div>
+            </div>
+        </footer>
+        <!-- Right Side Accent -->
+        <div class="absolute right-0 top-1/4 bottom-1/4 w-1 bg-primary/20"></div>
+    </div>
+    <!-- Floating Actions (Non-Printable in theory) -->
+    <div class="fixed bottom-8 right-8 flex flex-col gap-3 no-print">
+        <button onclick="window.print()"
+            class="flex items-center justify-center size-14 bg-primary text-white rounded-full shadow-lg hover:scale-105 transition-transform">
+            <span class="material-symbols-outlined">download</span>
+        </button>
+        <button onclick="window.print()"
+            class="flex items-center justify-center size-14 bg-slate-800 text-white rounded-full shadow-lg hover:scale-105 transition-transform">
+            <span class="material-symbols-outlined">print</span>
+        </button>
+    </div>
+</body>
+
+</html>

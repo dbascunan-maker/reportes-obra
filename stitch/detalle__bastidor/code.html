@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Detalle de Inspección: Bastidor</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#f97415",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#23170f",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .fill-icon {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-[#1c130d] dark:text-[#f8f7f5] min-h-screen flex flex-col">
+<!-- Header -->
+<header class="sticky top-0 z-30 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10">
+<div class="flex items-center justify-between p-4">
+<button onclick="window.location.href='/listado_de_inspección_actualizado/code.html'" class="flex items-center justify-center size-10 rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-[#1c130d] dark:text-[#f8f7f5]">arrow_back</span>
+</button>
+<h1 class="text-lg font-bold leading-tight tracking-tight flex-1 px-2 truncate">Detalle de Inspección: Bastidor</h1>
+<button class="flex items-center justify-center size-10 rounded-full hover:bg-primary/10 transition-colors">
+<span class="material-symbols-outlined text-[#1c130d] dark:text-[#f8f7f5]">more_vert</span>
+</button>
+</div>
+<!-- Photo count badge -->
+<div class="px-4 pb-3 flex items-center gap-2">
+<span id="photo-count-badge" class="bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0 FOTOS</span>
+</div>
+</header>
+<main class="flex-1 flex flex-col p-4 gap-6 pb-32">
+<!-- Instruction Card -->
+<section class="bg-white dark:bg-[#2d1f15] p-4 rounded-xl shadow-sm border border-primary/5">
+<div class="flex gap-3">
+<div class="bg-primary/10 p-2 rounded-lg self-start">
+<span class="material-symbols-outlined text-primary">info</span>
+</div>
+<div>
+<h3 class="text-sm font-semibold uppercase tracking-wider text-primary mb-1">Instrucciones</h3>
+<p class="text-base font-normal leading-relaxed opacity-90">Fotografía general del bastidor</p>
+</div>
+</div>
+</section>
+<!-- Empty State -->
+<section id="empty-state" class="flex-1 flex flex-col items-center justify-center py-12 px-6 text-center">
+<div class="w-full max-w-[320px] aspect-square bg-primary/5 rounded-full flex items-center justify-center mb-6 relative">
+<div class="absolute inset-0 bg-gradient-to-tr from-primary/20 to-transparent rounded-full opacity-30"></div>
+<span class="material-symbols-outlined text-8xl text-primary/40">photo_library</span>
+</div>
+<h2 class="text-xl font-bold mb-2">No hay fotos capturadas</h2>
+<p class="text-sm opacity-60 max-w-[280px]">Inicie la captura de imágenes para documentar el bastidor.</p>
+</section>
+<!-- Photo Grid (dynamically populated) -->
+<section id="photo-grid" class="grid grid-cols-3 gap-2" style="display: none;"></section>
+</main>
+<!-- Floating Action Bar -->
+<div class="fixed bottom-0 left-0 right-0 p-6 flex justify-center items-end pointer-events-none z-50">
+<div class="flex flex-col items-center gap-4 pointer-events-auto">
+<!-- Gallery button -->
+<button onclick="openGallery('bastidor', onPhotoAdded)" class="bg-white dark:bg-[#2d1f15] text-primary shadow-lg p-3 rounded-full border border-primary/10 mb-2">
+<span class="material-symbols-outlined">collections</span>
+</button>
+<!-- Camera FAB -->
+<button onclick="openCamera('bastidor', onPhotoAdded)" class="bg-primary hover:bg-orange-600 text-white size-20 rounded-full shadow-2xl flex items-center justify-center transition-all active:scale-95 border-4 border-white dark:border-[#23170f]">
+<span class="material-symbols-outlined text-4xl fill-icon">photo_camera</span>
+</button>
+</div>
+</div>
+<!-- Bottom Navigation Bar (SIMPLIFIED) -->
+<nav class="fixed bottom-0 w-full bg-white dark:bg-[#2d1f15] border-t border-primary/10 px-8 pb-4 pt-2 z-40 flex justify-around items-center">
+<a class="flex flex-col items-center gap-1 text-primary" href="/listado_de_inspección_actualizado/code.html">
+<span class="material-symbols-outlined fill-icon">home</span>
+<span class="text-[10px] font-medium">Inicio</span>
+</a>
+<div class="w-16"></div> <!-- Spacer for FAB -->
+<a class="flex flex-col items-center gap-1 opacity-50" href="#">
+<span class="material-symbols-outlined">map</span>
+<span class="text-[10px] font-medium">Mapa</span>
+</a>
+</nav>
+
+<script src="/app.js"></script>
+<script>
+    const CATEGORY_ID = 'bastidor';
+
+    function onPhotoAdded(photo) {
+        renderPhotoGrid(CATEGORY_ID, 'photo-grid', 'empty-state');
+        updatePhotoCountBadge(CATEGORY_ID);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        renderPhotoGrid(CATEGORY_ID, 'photo-grid', 'empty-state');
+        updatePhotoCountBadge(CATEGORY_ID);
+    });
+</script>
+</body></html>

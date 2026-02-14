@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+
+<html lang="es">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Informe de Inspección - Página 1</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#82bc00",
+                        "background-light": "#f8f7f5",
+                        "background-dark": "#23170f",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        @media print {
+            .no-print {
+                display: none;
+            }
+
+            body {
+                background-color: white !important;
+            }
+
+            .print-page {
+                box-shadow: none !important;
+                margin: 0 !important;
+                padding: 2cm !important;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-stone-200 font-display text-[#23170f]">
+    <!-- Toolbar (No visible in print) -->
+    <div
+        class="no-print w-full bg-white border-b border-stone-300 py-3 px-6 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary">description</span>
+            <span class="font-semibold">Vista Previa del Informe</span>
+        </div>
+        <div class="flex gap-3">
+            <button onclick="window.print()"
+                class="flex items-center gap-2 px-4 py-2 bg-stone-100 hover:bg-stone-200 rounded-lg text-sm font-medium transition-colors">
+                <span class="material-symbols-outlined text-lg">download</span>
+                Descargar PDF
+            </button>
+            <button
+                class="flex items-center gap-2 px-4 py-2 bg-primary text-white hover:bg-primary/90 rounded-lg text-sm font-medium transition-colors"
+                onclick="window.print()">
+                <span class="material-symbols-outlined text-lg">print</span>
+                Imprimir Informe
+            </button>
+        </div>
+    </div>
+    <!-- Main Report Page Container -->
+    <div class="flex justify-center p-8">
+        <div
+            class="print-page bg-white w-full max-w-[210mm] min-h-[297mm] shadow-2xl p-[1.5cm] flex flex-col relative overflow-hidden">
+            <!-- Header Section -->
+            <header class="mb-8 border-b-2 border-primary/10 pb-6 flex justify-between items-start">
+                <div>
+                    <h1 class="text-4xl font-black tracking-tight text-[#1c130d] mb-2">1. Fachada</h1>
+                    <div class="flex items-center gap-2 text-stone-500">
+                        <span class="material-symbols-outlined text-[18px]">location_on</span>
+                        <span class="text-sm font-medium uppercase tracking-wider">Proyecto: Residencia Arboledas -
+                            Bloque A</span>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <svg viewBox="0 0 48 48" class="h-10 ml-auto" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="24" cy="24" r="22" fill="#82bc00" opacity="0.15" />
+                        <circle cx="24" cy="20" r="8" fill="#82bc00" />
+                        <path d="M12 36c0-6.627 5.373-12 12-12s12 5.373 12 12" fill="#82bc00" opacity="0.3" />
+                        <path d="M24 8l2 4-2 2-2-2z" fill="#f97415" />
+                    </svg>
+                </div>
+            </header>
+            <!-- Instructions Box -->
+            <section class="mb-10">
+                <div class="rounded-lg border-l-4 border-primary bg-primary/5 p-5">
+                    <div class="flex items-center gap-2 mb-1">
+                        <span class="material-symbols-outlined text-primary text-[20px]">info</span>
+                        <p class="text-stone-900 text-sm font-bold uppercase tracking-wide">Instrucciones de Campo</p>
+                    </div>
+                    <p class="text-stone-600 text-base leading-relaxed">
+                        Fotografías de la fachada principal y laterales del proyecto. Asegúrese de capturar detalles de
+                        los acabados exteriores, carpintería metálica y posibles fisuras o desprendimientos.
+                    </p>
+                </div>
+            </section>
+            <!-- Image Grid (3x2) -->
+            <main class="flex-grow">
+                <div class="grid grid-cols-3 grid-rows-2 gap-4 h-[16cm]">
+                    <!-- Image Card 1 -->
+                    <div class="flex flex-col gap-2">
+                        <div class="flex-grow bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
+                            <img alt="Fachada principal edificio" class="w-full h-full object-cover"
+                                data-alt="Modern residential building facade with scaffolding"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuAs8n37uS5cBVCZypHN2eMPyyq8-hxxnetQRFMhJHh7eUWSW7hb_4CD1_RkeJHSYOcWRr3iXnUiUJHHDYQ47l4eFsZb9GZpds5OAkEIrMl2AMy-aeinP-_0sbBl3brut-xVxzSrJ-j1530a2gji6k4alOE58J7AQSdcHhuWdAV7kdgVh3bkGbDT3IbHn2isJMp-psyvub9oMriDNpJgLJ1B03mbPIWtim9MLbwRU5wJzoXdB7bDEbi7qKP4V9xKid_AmMNYaPrsDMc" />
+                        </div>
+                        <div class="text-[10px] text-stone-400 font-mono flex justify-between px-1">
+                            <span>IMG_001.JPG</span>
+                            <span>15/10/2023 09:15 AM</span>
+                        </div>
+                    </div>
+                    <!-- Image Card 2 -->
+                    <div class="flex flex-col gap-2">
+                        <div class="flex-grow bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
+                            <img alt="Detalle lateral" class="w-full h-full object-cover"
+                                data-alt="Detailed shot of brick wall construction"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYvu0IG6Yb-l-x74BOxCMHLwnYlNa_Jwuxtag-IQRFBVS_DJT1KrnkrjdEWTozPn-QbtL0BGgIgIiDkPKcs4kLlB1gbOf4UXXNSLxTBuBHb8ndWhkFPz_EKNDcYYFr4Pga91stv49kS_DydkRa9hdHQbWi5rswGyHLB-eFHsM2CciO9NRUd3D52jfZHetSZOc8yZvxRhOJOCn0ERYr1CEvK-iMO9r60h7zxuoSWSKzMefr3k9J5scotQSOF8RtJ45doc0SgZ5kSxw" />
+                        </div>
+                        <div class="text-[10px] text-stone-400 font-mono flex justify-between px-1">
+                            <span>IMG_002.JPG</span>
+                            <span>15/10/2023 09:18 AM</span>
+                        </div>
+                    </div>
+                    <!-- Image Card 3 -->
+                    <div class="flex flex-col gap-2">
+                        <div class="flex-grow bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
+                            <img alt="Fachada posterior" class="w-full h-full object-cover"
+                                data-alt="Perspective view of architectural concrete facade"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-elngxXh8Tn82PtRCw09ms_Bi4eD3y9y6kyad_YsdOEIxqzz-SdccxgZmbVbhdAAs04nDzV__Ib8SLige0mVoBymIe7GGsV7_m1V_bMU0ZJeHpar0kxPvesauZakEW18pMl5JDL7-eBZWK9EsK4dNzYilEbwW-cz0wZVMnAVzJxuCe5spY63XbRElstuqH0vF6lGg0FTt9Fqbp5Hun8_kgofUq1_3FgNlxLgBh9zILbBeXYgigdfnrN_qzsphixo31YU4esMaBEk" />
+                        </div>
+                        <div class="text-[10px] text-stone-400 font-mono flex justify-between px-1">
+                            <span>IMG_003.JPG</span>
+                            <span>15/10/2023 09:22 AM</span>
+                        </div>
+                    </div>
+                    <!-- Image Card 4 -->
+                    <div class="flex flex-col gap-2">
+                        <div class="flex-grow bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
+                            <img alt="Andamiaje lateral" class="w-full h-full object-cover"
+                                data-alt="Large construction crane and building facade"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCT1wd2ft9xcpULtPdpkwMJL2ex9UghUCyctHWn-VOmI-T_ESMUB9IZpXyxBpq_VCqhH-cs2fMblYvyFD0C8MJCcpvToySVs4_TsX3thJjsDCm-CThfbKl5hJr8M03c7Bf2dSXvV-SAcGlXtauti3hiHYGkkE84Tp8hac5aXRTdOeyqy8nAPhNp7AIYpN8ULjgyakh64GROkiyERiRZTEU1o9t4DlnTffX4I9Ol0vHoSftimLA1Zk5Y_XQwBcsT--Aj8RWCdh2zf6s" />
+                        </div>
+                        <div class="text-[10px] text-stone-400 font-mono flex justify-between px-1">
+                            <span>IMG_004.JPG</span>
+                            <span>15/10/2023 09:30 AM</span>
+                        </div>
+                    </div>
+                    <!-- Image Card 5 -->
+                    <div class="flex flex-col gap-2">
+                        <div class="flex-grow bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
+                            <img alt="Acabados exteriores" class="w-full h-full object-cover"
+                                data-alt="Glass windows reflection on office building facade"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQ50p64UQrryCbxgFJOVkrRsxFaghn5Pb9gCEtsvEejlRvixW9bAf0LivlOOCc5nzebVpQjxRBCXNI3YprWRicibu5vieIr4HfT219-2KDNM0WgCuIN76qwHca0ElYGmQkJ-LCip9JlCl1ZSP7T_0VJF3-t7DKa6I4dq7jjarDgdp2p4k51g9w5Pz7plPfFiIMI9W_zCAvzS_pzrkRwbNndph-kiKp8-dlQh7ozZsCIS3rxSmla3WRa1UIEkL19nZCveVrAS6Ga9o" />
+                        </div>
+                        <div class="text-[10px] text-stone-400 font-mono flex justify-between px-1">
+                            <span>IMG_005.JPG</span>
+                            <span>15/10/2023 09:45 AM</span>
+                        </div>
+                    </div>
+                    <!-- Image Card 6 -->
+                    <div class="flex flex-col gap-2">
+                        <div class="flex-grow bg-stone-100 rounded-lg overflow-hidden border border-stone-200">
+                            <img alt="Vista panorámica" class="w-full h-full object-cover"
+                                data-alt="Wide angle view of residential complex exterior"
+                                src="https://lh3.googleusercontent.com/aida-public/AB6AXuD48MKYuhcZr5S8jotYwS8ciA9z-1tauST-G6Ocq6tZ6hR0zw4-akVO5zwMAf-UqA-grOvFzq9zkPOdyih4u2z6K0m_rbxu1X2ToZc8Kn3GDsBbaJYqBF3v1n6iBSa1gltf74Hw2oNst7Wp5gkapxwlyPGU3Jhcw4WFNI8wuMunap2QWb7YWvW8zb9_e4Pnkcv7Qgt5hOKQ44sy_VF-S2tSZmjPR9pxRbbvJ9sMbioi0Wn8c2O0za4nOearddRzVkgX2wf7V197hG8" />
+                        </div>
+                        <div class="text-[10px] text-stone-400 font-mono flex justify-between px-1">
+                            <span>IMG_006.JPG</span>
+                            <span>15/10/2023 09:55 AM</span>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            <!-- Observations Section (Extra context for the report) -->
+            <section class="mt-8 border-t border-stone-100 pt-6">
+                <p class="text-xs font-bold text-stone-400 uppercase mb-2 tracking-widest">Observaciones generales de la
+                    sección</p>
+                <div class="grid grid-cols-2 gap-10">
+                    <p class="text-sm text-stone-600 italic">
+                        "Se observa avance del 85% en el revestimiento exterior. Pendiente remates en juntas de
+                        dilatación de la fachada norte."
+                    </p>
+                    <div class="flex justify-end items-end gap-12">
+                        <div class="text-center">
+                            <div class="border-b border-stone-300 w-32 mb-1"></div>
+                            <p class="text-[10px] text-stone-400">Firma Inspector</p>
+                        </div>
+                        <div class="text-center">
+                            <div class="border-b border-stone-300 w-32 mb-1"></div>
+                            <p class="text-[10px] text-stone-400">Firma Residente</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- Footer -->
+            <footer
+                class="mt-auto border-t border-stone-100 pt-4 flex justify-between items-center text-stone-400 text-xs font-medium">
+                <div class="flex gap-4">
+                    <p>Fecha de inspección: <span class="text-stone-600">15 de Octubre, 2023</span></p>
+                    <p>ID: <span class="text-stone-600">INS-2023-0482</span></p>
+                </div>
+                <div class="bg-stone-50 px-3 py-1 rounded-full border border-stone-100">
+                    Página <span class="text-stone-900 font-bold">1</span> de 12
+                </div>
+            </footer>
+            <!-- Corner Page Decoration -->
+            <div class="absolute top-0 right-0 w-16 h-16 bg-primary/5 [clip-path:polygon(100%_0,0_0,100%_100%)]"></div>
+        </div>
+    </div>
+</body>
+
+</html>
