@@ -64,8 +64,8 @@
     <header
         class="sticky top-0 z-10 bg-white/95 dark:bg-background-dark/95 backdrop-blur-md border-b border-primary/10 px-4 py-4 flex items-center justify-between shadow-sm">
         <div class="flex flex-col">
-            <h1 class="text-xl font-bold tracking-tight text-[#1c130d] dark:text-white">Inspección de Obra</h1>
-            <span class="text-primary font-semibold text-sm">Registro Fotografico</span>
+            <h1 class="text-xl font-bold tracking-tight text-[#1c130d] dark:text-white">Sustentambiente</h1>
+            <span class="text-primary font-semibold text-sm">Energía Solar</span>
         </div>
         <div class="flex gap-3">
             <button onclick="ProjectData.clearAll()"
@@ -73,8 +73,8 @@
                 <span class="material-symbols-outlined">delete</span>
             </button>
             <button onclick="openProfileModal()"
-                class="bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-zinc-700 dark:text-zinc-200 size-10 rounded-full flex items-center justify-center transition-colors">
-                <span class="material-symbols-outlined">person</span>
+                class="bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 size-10 rounded-full flex items-center justify-center transition-colors">
+                <img src="logo.png" class="size-8 object-contain" alt="Logo">
             </button>
         </div>
     </header>
@@ -83,7 +83,7 @@
         <div class="flex items-center justify-between mb-4">
             <h2 id="project-title" contenteditable="true"
                 class="text-lg font-bold border-b border-transparent hover:border-zinc-300 focus:border-primary focus:outline-none transition-colors"
-                spellcheck="false">Nombre del Proyecto</h2>
+                spellcheck="false">Nombre de la Obra</h2>
             <div class="flex items-center gap-2 text-zinc-500 text-sm">
                 <span class="material-symbols-outlined text-[18px]">calendar_today</span>
                 <input type="date" id="project-date"
@@ -428,6 +428,13 @@
 
         function loadProjectData() {
             const data = ProjectData.getData();
+
+            // Corrección: Si el título actual es "Sustentambiente", cambiarlo a "Nombre de la Obra"
+            if (data.title === "Sustentambiente") {
+                data.title = "Nombre de la Obra";
+                ProjectData.saveData(data);
+            }
+
             if (data.title) document.getElementById('project-title').textContent = data.title;
             if (data.subtitle) document.getElementById('project-subtitle').textContent = data.subtitle;
             if (data.date) document.getElementById('project-date').value = data.date;

@@ -91,8 +91,8 @@ const ProjectData = {
         try {
             const data = localStorage.getItem(this._key);
             return data ? JSON.parse(data) : {
-                title: "Nombre del Proyecto",
-                subtitle: "Dirección de la Obra",
+                title: "Nombre de la Obra",
+                subtitle: "Instalación Fotovoltaica",
                 date: new Date().toISOString().split('T')[0],
                 inspectorName: "",
                 inspectorRole: "",
