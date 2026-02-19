@@ -89,15 +89,6 @@
                 <input type="date" id="project-date"
                     class="bg-transparent border-none p-0 text-zinc-500 text-sm focus:ring-0 cursor-pointer" />
             </div>
-            <div class="flex items-center gap-2 text-zinc-500 text-sm mt-1">
-                <span class="material-symbols-outlined text-[18px]">location_on</span>
-                <input type="text" id="project-location" placeholder="Coordenadas GPS"
-                    class="bg-transparent border-none p-0 text-zinc-500 text-sm focus:ring-0 w-full placeholder:text-zinc-400" />
-                <button onclick="getGPSLocation()" class="text-primary hover:text-orange-600 transition-colors"
-                    title="Obtener ubicación GPS">
-                    <span class="material-symbols-outlined text-[18px]">my_location</span>
-                </button>
-            </div>
         </div>
         <h3 id="project-subtitle" contenteditable="true"
             class="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-4 border-b border-transparent hover:border-zinc-300 focus:border-primary focus:outline-none transition-colors"
@@ -433,7 +424,6 @@
             document.getElementById('project-title').addEventListener('input', saveProjectData);
             document.getElementById('project-subtitle').addEventListener('input', saveProjectData);
             document.getElementById('project-date').addEventListener('change', saveProjectData);
-            document.getElementById('project-location').addEventListener('input', saveProjectData);
         });
 
         function loadProjectData() {
@@ -441,7 +431,6 @@
             if (data.title) document.getElementById('project-title').textContent = data.title;
             if (data.subtitle) document.getElementById('project-subtitle').textContent = data.subtitle;
             if (data.date) document.getElementById('project-date').value = data.date;
-            if (data.location) document.getElementById('project-location').value = data.location;
 
             // Modal fields
             if (data.inspectorName) document.getElementById('inspector-name').value = data.inspectorName;
@@ -454,33 +443,9 @@
                 title: document.getElementById('project-title').textContent,
                 subtitle: document.getElementById('project-subtitle').textContent,
                 date: document.getElementById('project-date').value,
-                location: document.getElementById('project-location').value
             });
         }
 
-        function getGPSLocation() {
-            const btn = document.querySelector('button[title="Obtener ubicación GPS"]');
-            const originalIcon = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span>';
-
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(async (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-                    const locString = `${lat.toFixed(5)}, ${lon.toFixed(5)}`;
-                    document.getElementById('project-location').value = locString;
-                    saveProjectData();
-                    btn.innerHTML = originalIcon;
-                }, (error) => {
-                    console.error("Error GPS:", error);
-                    alert("No se pudo obtener la ubicación. Verifique los permisos.");
-                    btn.innerHTML = originalIcon;
-                });
-            } else {
-                alert("GPS no disponible en este dispositivo.");
-                btn.innerHTML = originalIcon;
-            }
-        }
 
         function openProfileModal() {
             document.getElementById('profile-modal').classList.remove('hidden');
