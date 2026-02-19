@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Scanner App - Panel Capture</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <link
+        href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+        rel="stylesheet" />
+    <link rel="manifest" href="../manifest.json">
+    <!-- Removiendo tesseract para usar Google Vision API (Cloud) -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('../sw.js');
+            });
+        }
+    </script>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#99cd32",
+                        "background-light": "#f7f6f8",
+                        "background-dark": "#121212",
+                        "surface-dark": "#1e1e1e",
+                        "border-dark": "#2d2d2d",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .scanner-viewport {
+            position: relative;
+            width: 100%;
+            height: 45vh;
+            /* Ajuste para que se vea bien en iPhone */
+            background: #000;
+            overflow: hidden;
+        }
+
+        .scanner-reticle {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 80%;
+            height: 20%;
+            min-width: 150px;
+            min-height: 80px;
+            border: 3px solid #99cd32;
+            border-radius: 8px;
+            box-shadow: 0 0 0 4000px rgba(0, 0, 0, 0.7);
+            transform: translate(-50%, -50%);
+            z-index: 10;
+            cursor: move;
+        }
+
+        .crop-handle {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #99cd32;
+            border-radius: 50%;
+            z-index: 20;
+        }
+
+        .handle-nw {
+            top: -10px;
+            left: -10px;
+            cursor: nw-resize;
+        }
+
+        .handle-ne {
+            top: -10px;
+            right: -10px;
+            cursor: ne-resize;
+        }
+
+        .handle-sw {
+            bottom: -10px;
+            left: -10px;
+            cursor: sw-resize;
+        }
+
+        .handle-se {
+            bottom: -10px;
+            right: -10px;
+            cursor: se-resize;
+        }
+
+        .scanner-line {
+            position: absolute;
+            width: 100%;
+            height: 1px;
+            background-color: #99cd32;
+            top: 50%;
+            left: 0;
+            box-shadow: 0 0 4px #99cd32;
+            z-index: 11;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+
+<body
+    class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col font-display">
+    <!-- Header Section -->
+    <header
+        class="p-4 flex items-center justify-between border-b border-slate-200 dark:border-border-dark bg-white dark:bg-background-dark sticky top-0 z-10">
+        <div class="flex items-center gap-3">
+            <a href="../index.html" class="w-12 h-12 flex items-center justify-center">
+                <img src="../logo_sustentambiente.png" alt="Sustentambiente" class="w-10 h-10 object-contain">
+            </a>
+            <div>
+                <h1 class="text-sm font-bold leading-none">Scanner de Paneles</h1>
+                <p class="text-[10px] text-slate-500 font-medium uppercase tracking-tighter mt-1">SUSTENTAMBIENTE -
+                    PROFESIONAL</p>
+            </div>
+        </div>
+        <div class="flex gap-2">
+            <div id="drive-status"
+                class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20">
+                <div class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-[10px] font-bold uppercase tracking-wider">Cloud Active</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- API Key Modal (Hidden/Standalone) -->
+    <div id="api-modal" class="hidden"></div>
+    <main class="flex-1 flex flex-col p-4 gap-4 overflow-y-auto pb-24">
+        <!-- Current Sequence Info -->
+        <div
+            class="flex items-center justify-between bg-white dark:bg-surface-dark p-4 rounded-xl border border-slate-200 dark:border-border-dark shadow-sm">
+            <div>
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Secuencia
+                    Actual</p>
+                <h2 id="panel-title" class="text-xl font-black text-primary">Panel Numero 1</h2>
+            </div>
+            <div class="text-right">
+                <p class="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider">Estado</p>
+                <p id="status-indicator" class="text-sm font-bold text-emerald-500 italic">Listo</p>
+            </div>
+        </div>
+
+        <!-- Scanner Viewport Area -->
+        <div id="viewport-container"
+            class="relative w-full aspect-[4/3] bg-black rounded-2xl overflow-hidden border-2 border-slate-200 dark:border-border-dark touch-none">
+            <img id="capture-preview" class="absolute w-full h-full object-contain hidden pointer-events-none"
+                draggable="false">
+
+            <div id="reticle-container" class="scanner-reticle">
+                <div id="scanner-line" class="scanner-line pointer-events-none hidden"></div>
+                <!-- Resize Handles -->
+                <div class="crop-handle handle-nw" data-handle="nw"></div>
+                <div class="crop-handle handle-ne" data-handle="ne"></div>
+                <div class="crop-handle handle-sw" data-handle="sw"></div>
+                <div class="crop-handle handle-se" data-handle="se"></div>
+            </div>
+
+            <!-- Viewport Controls (Keep for Zoom if needed on background) -->
+            <div class="absolute bottom-4 left-0 right-0 flex justify-center gap-6 z-20 pointer-events-none">
+                <button id="zoom-out-btn"
+                    class="pointer-events-auto bg-black/60 text-white w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-2xl">zoom_out</span>
+                </button>
+                <button id="zoom-in-btn"
+                    class="pointer-events-auto bg-black/60 text-white w-12 h-12 rounded-full flex items-center justify-center backdrop-blur-md active:scale-95 transition-all">
+                    <span class="material-symbols-outlined text-2xl">zoom_in</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Scan Result & Preview -->
+        <div id="scan-feedback"
+            class="mt-4 bg-white dark:bg-surface-dark rounded-2xl p-4 border border-slate-200 dark:border-border-dark hidden">
+            <div class="flex items-center gap-4">
+                <div class="w-24 h-16 bg-black rounded-lg overflow-hidden border border-primary/30 flex-shrink-0">
+                    <img id="scan-preview-thumb" class="w-full h-full object-contain">
+                </div>
+                <div class="flex-grow">
+                    <span class="text-[10px] font-bold text-slate-400 uppercase">Vista previa de lectura</span>
+                    <p class="text-[11px] text-slate-500 leading-tight">Si se ve borroso, ajuste el recorte o filtro.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-1.5 mt-4">
+            <div class="flex justify-between items-end px-1">
+                <span class="text-xs font-bold text-slate-500 uppercase">Código Detectado</span>
+                <span id="status-indicator"
+                    class="text-xs font-black text-amber-500 uppercase tracking-wider">Listo</span>
+            </div>
+            <div class="relative group">
+                <input type="text" id="serial-input"
+                    class="w-full bg-white dark:bg-surface-dark text-slate-900 dark:text-white border-2 border-slate-200 dark:border-border-dark rounded-2xl py-4 px-5 text-2xl font-black focus:border-primary focus:ring-0 transition-all placeholder:text-slate-300"
+                    placeholder="Esperando escaneo...">
+                <div class="absolute right-4 top-1/2 -translate-y-1/2 flex gap-2">
+                    <span
+                        class="material-symbols-outlined text-primary opacity-0 group-focus-within:opacity-100 transition-opacity">edit</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="grid grid-cols-1 gap-3 pt-2">
+            <input type="file" id="camera-input" accept="image/*" capture="environment" class="hidden">
+
+            <button id="capture-btn"
+                class="w-full bg-white dark:bg-surface-dark text-slate-900 dark:text-white py-4 rounded-2xl font-black text-lg border-2 border-primary border-b-8 active:border-b-2 active:translate-y-1 flex items-center justify-center gap-2 transition-all">
+                <span class="material-symbols-outlined text-2xl text-primary">photo_camera</span>
+                SACAR FOTO
+            </button>
+
+            <button id="scan-btn" disabled
+                class="w-full bg-amber-500 text-white py-4 rounded-2xl font-black text-lg shadow-lg flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                <span class="material-symbols-outlined text-3xl">document_scanner</span>
+                ESCANEAR AHORA
+            </button>
+
+            <button id="save-btn" disabled
+                class="w-full bg-primary hover:bg-primary/90 text-white py-5 rounded-2xl font-black text-xl shadow-xl shadow-primary/30 flex items-center justify-center gap-3 active:scale-[0.98] transition-all disabled:opacity-40 disabled:cursor-not-allowed">
+                <span class="material-symbols-outlined text-3xl">cloud_upload</span>
+                GUARDAR PANEL
+            </button>
+        </div>
+
+        <script>
+            const captureBtn = document.getElementById('capture-btn');
+            const scanBtn = document.getElementById('scan-btn');
+            const saveBtn = document.getElementById('save-btn');
+            const cameraInput = document.getElementById('camera-input');
+            const previewImg = document.getElementById('capture-preview');
+            const scannerLine = document.getElementById('scanner-line');
+            const serialInput = document.getElementById('serial-input');
+            const zoomInBtn = document.getElementById('zoom-in-btn');
+            const zoomOutBtn = document.getElementById('zoom-out-btn');
+            const panelTitle = document.getElementById('panel-title');
+            const statusIndicator = document.getElementById('status-indicator');
+            const reticle = document.getElementById('reticle-container');
+            const viewport = document.getElementById('viewport-container');
+            const scanFeedback = document.getElementById('scan-feedback');
+            const scanPreviewThumb = document.getElementById('scan-preview-thumb');
+            const settingsBtn = { click: () => { } }; // Mock for compatibility
+            const apiModal = { style: { display: 'none' } }; // Mock
+            const apiKeyInput = { value: '' }; // Mock
+
+            // LLAVE DE API FORZADA (Zero-Config)
+            const visionApiKey = "AIzaSyCNGVZJDFSXbCFmb6ftfMZpJ1StoxIIXSc";
+            statusIndicator.textContent = "Sustentambiente OK";
+
+            let panelCount = parseInt(localStorage.getItem('panelCount') || '1');
+            let currentImageData = null;
+            let imgScale = 1;
+
+            // Initial State
+            panelTitle.textContent = `Panel Numero ${panelCount}`;
+
+            // INTERACTIVE CROPPER LOGIC
+            let isDragging = false;
+            let isResizing = false;
+            let activeHandle = null;
+            let startMouseX, startMouseY;
+            let startReticleX, startReticleY;
+            let startReticleW, startReticleH;
+
+            function updateViewportFilters() {
+                previewImg.style.transform = `scale(${imgScale})`;
+            }
+
+            zoomInBtn.onclick = () => { imgScale += 0.2; updateViewportFilters(); };
+            zoomOutBtn.onclick = () => { if (imgScale > 0.5) imgScale -= 0.2; updateViewportFilters(); };
+
+            viewport.addEventListener('mousedown', startInteracting);
+            viewport.addEventListener('touchstart', startInteracting, { passive: false });
+
+            function startInteracting(e) {
+                if (previewImg.classList.contains('hidden')) return;
+                const touches = e.touches ? e.touches[0] : e;
+                const target = e.target;
+
+                if (target.classList.contains('crop-handle')) {
+                    isResizing = true;
+                    activeHandle = target.dataset.handle;
+                } else if (target === reticle) {
+                    isDragging = true;
+                } else {
+                    return; // Ignore clicks outside
+                }
+
+                e.preventDefault();
+                startMouseX = touches.clientX;
+                startMouseY = touches.clientY;
+
+                const rect = reticle.getBoundingClientRect();
+                const parentRect = viewport.getBoundingClientRect();
+
+                startReticleX = rect.left - parentRect.left;
+                startReticleY = rect.top - parentRect.top;
+                startReticleW = rect.width;
+                startReticleH = rect.height;
+
+                window.addEventListener('mousemove', handleInteraction);
+                window.addEventListener('touchmove', handleInteraction, { passive: false });
+                window.addEventListener('mouseup', stopInteracting);
+                window.addEventListener('touchend', stopInteracting);
+            }
+
+            function handleInteraction(e) {
+                if (!isDragging && !isResizing) return;
+                e.preventDefault();
+                const touches = e.touches ? e.touches[0] : e;
+
+                const dx = touches.clientX - startMouseX;
+                const dy = touches.clientY - startMouseY;
+                const parentRect = viewport.getBoundingClientRect();
+
+                if (isDragging) {
+                    let nx = startReticleX + dx;
+                    let ny = startReticleY + dy;
+
+                    // Constrain to viewport
+                    nx = Math.max(0, Math.min(nx, parentRect.width - startReticleW));
+                    ny = Math.max(0, Math.min(ny, parentRect.height - startReticleH));
+
+                    reticle.style.left = nx + (startReticleW / 2) + 'px';
+                    reticle.style.top = ny + (startReticleH / 2) + 'px';
+                } else if (isResizing) {
+                    let nw = startReticleW;
+                    let nh = startReticleH;
+                    let nl = startReticleX;
+                    let nt = startReticleY;
+
+                    if (activeHandle.includes('e')) nw = Math.max(100, startReticleW + dx);
+                    if (activeHandle.includes('s')) nh = Math.max(60, startReticleH + dy);
+                    if (activeHandle.includes('w')) {
+                        const diff = Math.min(startReticleW - 100, dx);
+                        nw = startReticleW - diff;
+                        nl = startReticleX + diff;
+                    }
+                    if (activeHandle.includes('n')) {
+                        const diff = Math.min(startReticleH - 60, dy);
+                        nh = startReticleH - diff;
+                        nt = startReticleY + diff;
+                    }
+
+                    // Bounds check
+                    if (nl < 0) { nw += nl; nl = 0; }
+                    if (nt < 0) { nh += nt; nt = 0; }
+                    if (nl + nw > parentRect.width) nw = parentRect.width - nl;
+                    if (nt + nh > parentRect.height) nh = parentRect.height - nt;
+
+                    reticle.style.width = nw + 'px';
+                    reticle.style.height = nh + 'px';
+                    reticle.style.left = nl + (nw / 2) + 'px';
+                    reticle.style.top = nt + (nh / 2) + 'px';
+                }
+            }
+
+            function stopInteracting() {
+                isDragging = false;
+                isResizing = false;
+                window.removeEventListener('mousemove', handleInteraction);
+                window.removeEventListener('touchmove', handleInteraction);
+            }
+
+            captureBtn.onclick = () => cameraInput.click();
+
+            cameraInput.onchange = (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    currentImageData = event.target.result;
+                    previewImg.src = currentImageData;
+                    previewImg.classList.remove('hidden');
+
+                    // Reset Cropper to default center thin box
+                    reticle.style.width = '80%';
+                    reticle.style.height = '15%';
+                    reticle.style.left = '50%';
+                    reticle.style.top = '50%';
+
+                    imgScale = 1;
+                    updateViewportFilters();
+
+                    statusIndicator.textContent = "Encierre el CÓDIGO";
+                    statusIndicator.classList.replace('text-emerald-500', 'text-amber-500');
+
+                    scanBtn.disabled = false;
+                    saveBtn.disabled = false;
+                    serialInput.value = "";
+                    scanFeedback.classList.add('hidden'); // Hide preview on new capture
+                };
+                reader.readAsDataURL(file);
+            };
+
+            async function getSnapshot() {
+                return new Promise((resolve) => {
+                    const canvas = document.createElement('canvas');
+                    const ctx = canvas.getContext('2d');
+
+                    const img = new Image();
+                    img.onload = () => {
+                        const vRect = viewport.getBoundingClientRect();
+                        const rRect = reticle.getBoundingClientRect();
+
+                        // Posición relativa del retículo en el viewport (0 a 1)
+                        const rx = (rRect.left - vRect.left) / vRect.width;
+                        const ry = (rRect.top - vRect.top) / vRect.height;
+                        const rw = rRect.width / vRect.width;
+                        const rh = rRect.height / vRect.height;
+
+                        // Canvas size based on crop ratio to maintain quality
+                        canvas.width = 1200;
+                        canvas.height = canvas.width * (rh / rw);
+
+                        // Dimensiones de la imagen dentro del contain (escalada)
+                        const imgRatio = img.naturalWidth / img.naturalHeight;
+                        const vRatio = vRect.width / vRect.height;
+
+                        let dw, dh, dx, dy;
+                        if (imgRatio > vRatio) {
+                            dw = vRect.width;
+                            dh = vRect.width / imgRatio;
+                        } else {
+                            dh = vRect.height;
+                            dw = vRect.height * imgRatio;
+                        }
+
+                        // Aplicar zoom a las dimensiones renderizadas
+                        dw *= imgScale;
+                        dh *= imgScale;
+
+                        dx = (vRect.width - dw) / 2;
+                        dy = (vRect.height - dh) / 2;
+
+                        // Mapear coordenadas del viewport a coordenadas NATURALES de la imagen
+                        const sourceX = (rx * vRect.width - dx) * (img.naturalWidth / dw);
+                        const sourceY = (ry * vRect.height - dy) * (img.naturalHeight / dh);
+                        const sourceW = (rw * vRect.width) * (img.naturalWidth / dw);
+                        const sourceH = (rh * vRect.height) * (img.naturalHeight / dh);
+
+                        // 1. Dibujar el area pura
+                        ctx.drawImage(img, sourceX, sourceY, sourceW, sourceH, 0, 0, canvas.width, canvas.height);
+
+                        // Mostrar preview al usuario (lo que se envía a Google)
+                        scanPreviewThumb.src = canvas.toDataURL('image/jpeg', 0.5);
+                        scanFeedback.classList.remove('hidden');
+
+                        resolve(canvas.toDataURL('image/jpeg', 0.8));
+                    };
+                    img.src = currentImageData;
+                });
+            }
+
+            scanBtn.onclick = async () => {
+                scanBtn.disabled = true;
+                statusIndicator.textContent = "Sustentambiente...";
+                serialInput.value = "Leyendo panel...";
+
+                try {
+                    const snapshot = await getSnapshot();
+                    const base64Image = snapshot.split(',')[1];
+
+                    // LLAMADA A GOOGLE VISION API
+                    const response = await fetch(`https://vision.googleapis.com/v1/images:annotate?key=${visionApiKey}`, {
+                        method: 'POST',
+                        body: JSON.stringify({
+                            requests: [{
+                                image: { content: base64Image },
+                                features: [{ type: 'TEXT_DETECTION' }]
+                            }]
+                        })
+                    });
+
+                    const data = await response.json();
+
+                    if (data.error) {
+                        throw new Error(data.error.message);
+                    }
+
+                    const fullText = data.responses[0]?.textAnnotations?.[0]?.description || "";
+
+                    // PROCESAMIENTO INTELIGENTE
+                    // Buscamos la línea más probable que sea el código
+                    const lines = fullText.split('\n').filter(l => l.trim().length > 2);
+                    let result = lines[0] || "";
+
+                    // Si hay varias líneas, preferimos la que tenga números y letras (alfanumérico)
+                    for (let line of lines) {
+                        if (/[A-Z]/.test(line) && /[0-9]/.test(line)) {
+                            result = line.trim();
+                            break;
+                        }
+                    }
+
+                    serialInput.value = result;
+                    statusIndicator.textContent = result ? "Precisión Google" : "No detectado";
+                    statusIndicator.classList.replace('text-amber-500', result ? 'text-emerald-500' : 'text-red-500');
+                    scanBtn.disabled = false;
+                } catch (err) {
+                    alert("Error Google Vision: " + err.message);
+                    statusIndicator.textContent = "Error API";
+                    scanBtn.disabled = false;
+                }
+            };
+
+            saveBtn.onclick = async () => {
+                try {
+                    statusIndicator.textContent = "Guardando...";
+                    const finalSnapshot = await getSnapshot();
+
+                    const captureData = {
+                        serial: serialInput.value || "Sin Código",
+                        panel: panelCount,
+                        date: new Date().toLocaleString(),
+                        image: finalSnapshot
+                    };
+
+                    const history = JSON.parse(localStorage.getItem('capturesHistory') || '[]');
+                    history.unshift(captureData);
+                    localStorage.setItem('capturesHistory', JSON.stringify(history));
+
+                    panelCount++;
+                    localStorage.setItem('panelCount', panelCount);
+                    alert(`¡Guardado! Panel #${panelCount - 1}`);
+                    location.reload(); // Hard reset para limpiar todo
+                } catch (e) {
+                    alert("¡MEMORIA LLENA!");
+                }
+            };
+        </script>
+    </main>
+
+    <!-- Navigation Bar -->
+    <nav
+        class="fixed bottom-0 left-0 right-0 bg-white/95 dark:bg-background-dark/95 backdrop-blur-md border-t border-slate-200 dark:border-border-dark px-6 py-2 pb-6 z-30">
+        <div class="flex justify-around items-center max-w-md mx-auto">
+            <a class="flex flex-col items-center gap-1 text-primary" href="./code.html">
+                <span class="material-symbols-outlined fill text-2xl">home</span>
+                <span class="text-[10px] font-black uppercase tracking-tighter">Home</span>
+            </a>
+            <a class="flex flex-col items-center gap-1 text-slate-400 hover:text-primary transition-colors"
+                href="../historial_de_capturas/code.html">
+                <span class="material-symbols-outlined text-2xl">history</span>
+                <span class="text-[10px] font-black uppercase tracking-tighter">History</span>
+            </a>
+        </div>
+    </nav>
+</body>
+
+</html>
