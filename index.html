@@ -416,8 +416,8 @@
     <script src="./app.js"></script>
     <script>
         // Update photo counts on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            updateListadoCounts();
+        document.addEventListener('DOMContentLoaded', async () => {
+            await updateListadoCounts();
             loadProjectData();
 
             // Auto-save listeners

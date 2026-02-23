@@ -116,15 +116,16 @@
 <script>
     const CATEGORY_ID = 'inversor';
 
-    function onPhotoAdded(photo) {
-        renderPhotoGrid(CATEGORY_ID, 'photo-grid', 'empty-state');
-        updatePhotoCountBadge(CATEGORY_ID);
+    async function onPhotoAdded(photo) {
+        await renderPhotoGrid(CATEGORY_ID, 'photo-grid', 'empty-state');
+        await updatePhotoCountBadge(CATEGORY_ID);
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-        renderPhotoGrid(CATEGORY_ID, 'photo-grid', 'empty-state');
-        updatePhotoCountBadge(CATEGORY_ID);
+    document.addEventListener('DOMContentLoaded', async () => {
+        await renderPhotoGrid(CATEGORY_ID, 'photo-grid', 'empty-state');
+        await updatePhotoCountBadge(CATEGORY_ID);
     });
 </script>
 </body></html>
+
 

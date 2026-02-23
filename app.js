@@ -29,55 +29,130 @@ const CATEGORIES = [
 // ============================================================
 // PHOTO STORAGE — localStorage persistence
 // ============================================================
+// ============================================================
+// PHOTO STORAGE — IndexedDB persistence
+// ============================================================
 const PhotoStorage = {
-    _getKey(categoryId) {
-        return `photos_${categoryId}`;
+    DB_NAME: 'PhotoAppDB',
+    DB_VERSION: 1,
+    STORE_NAME: 'photos',
+    _db: null,
+
+    async init() {
+        if (this._db) return this._db;
+        return new Promise((resolve, reject) => {
+            const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+            request.onerror = () => reject(request.error);
+            request.onsuccess = () => {
+                this._db = request.result;
+                resolve(this._db);
+            };
+            request.onupgradeneeded = (e) => {
+                const db = e.target.result;
+                if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+                    db.createObjectStore(this.STORE_NAME, { keyPath: 'id' });
+                }
+            };
+        });
     },
 
-    getPhotos(categoryId) {
+    async _getStore(mode = 'readonly') {
+        const db = await this.init();
+        return db.transaction(this.STORE_NAME, mode).objectStore(this.STORE_NAME);
+    },
+
+    async getPhotos(categoryId) {
         try {
-            const data = localStorage.getItem(this._getKey(categoryId));
-            return data ? JSON.parse(data) : [];
+            const store = await this._getStore();
+            return new Promise((resolve) => {
+                const request = store.getAll();
+                request.onsuccess = () => {
+                    const allPhotos = request.result;
+                    // Filter by category in JS (IndexedDB could use an index, but this is simpler for now)
+                    resolve(allPhotos.filter(p => p.categoryId === categoryId));
+                };
+            });
         } catch (e) {
             console.error('Error reading photos:', e);
             return [];
         }
     },
 
-    addPhoto(categoryId, photoData) {
-        const photos = this.getPhotos(categoryId);
+    async addPhoto(categoryId, photoData) {
+        const photos = await this.getPhotos(categoryId);
         const photo = {
             id: Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+            categoryId,
             data: photoData, // base64
             timestamp: new Date().toISOString(),
             filename: `IMG_${String(photos.length + 1).padStart(3, '0')}.JPG`
         };
-        photos.push(photo);
+
         try {
-            localStorage.setItem(this._getKey(categoryId), JSON.stringify(photos));
+            const store = await this._getStore('readwrite');
+            return new Promise((resolve, reject) => {
+                const request = store.add(photo);
+                request.onsuccess = () => resolve(photo);
+                request.onerror = () => {
+                    alert('⚠️ Error al guardar la foto en el dispositivo.');
+                    reject(request.error);
+                };
+            });
         } catch (e) {
-            alert('⚠️ Almacenamiento lleno. Intenta eliminar algunas fotos.');
-            console.error('Storage full:', e);
+            console.error('Storage error:', e);
+            throw e;
         }
-        return photo;
     },
 
-    deletePhoto(categoryId, photoId) {
-        let photos = this.getPhotos(categoryId);
-        photos = photos.filter(p => p.id !== photoId);
-        localStorage.setItem(this._getKey(categoryId), JSON.stringify(photos));
+    async deletePhoto(categoryId, photoId) {
+        try {
+            const store = await this._getStore('readwrite');
+            return new Promise((resolve) => {
+                const request = store.delete(photoId);
+                request.onsuccess = () => resolve();
+            });
+        } catch (e) {
+            console.error('Delete error:', e);
+        }
     },
 
-    getPhotoCount(categoryId) {
-        return this.getPhotos(categoryId).length;
+    async getPhotoCount(categoryId) {
+        const photos = await this.getPhotos(categoryId);
+        return photos.length;
     },
 
-    getAllCounts() {
+    async getAllCounts() {
         const counts = {};
-        CATEGORIES.forEach(cat => {
-            counts[cat.id] = this.getPhotoCount(cat.id);
-        });
+        for (const cat of CATEGORIES) {
+            counts[cat.id] = await this.getPhotoCount(cat.id);
+        }
         return counts;
+    },
+
+    // Migración de localStorage a IndexedDB
+    async migrateFromLocalStorage() {
+        const migratedKey = 'migration_done';
+        if (localStorage.getItem(migratedKey)) return;
+
+        console.log("Iniciando migración de localStorage a IndexedDB...");
+        for (const cat of CATEGORIES) {
+            const key = `photos_${cat.id}`;
+            const data = localStorage.getItem(key);
+            if (data) {
+                try {
+                    const photos = JSON.parse(data);
+                    for (const p of photos) {
+                        await this.addPhoto(cat.id, p.data);
+                    }
+                    localStorage.removeItem(key);
+                    console.log(`Migradas ${photos.length} fotos de ${cat.id}`);
+                } catch (e) {
+                    console.error(`Error migrando categoría ${cat.id}:`, e);
+                }
+            }
+        }
+        localStorage.setItem(migratedKey, 'true');
+        console.log("Migración completada.");
     }
 };
 
@@ -114,19 +189,26 @@ const ProjectData = {
         }
     },
 
-    clearAll() {
+    async clearAll() {
         if (confirm("⚠️ ¿Estás seguro de BORRAR TODO?\n\nSe eliminarán todas las fotos y los datos del proyecto actual de forma permanente.")) {
             try {
-                // Clear photos
-                CATEGORIES.forEach(cat => {
-                    localStorage.removeItem(PhotoStorage._getKey(cat.id));
-                });
+                // Clear IndexedDB photos
+                const db = await PhotoStorage.init();
+                if (db) {
+                    const tx = db.transaction(PhotoStorage.STORE_NAME, 'readwrite');
+                    tx.objectStore(PhotoStorage.STORE_NAME).clear();
 
-                // Clear project data
+                    await new Promise((resolve) => {
+                        tx.oncomplete = resolve;
+                    });
+                }
+
+                // Clear project data and metadata
                 localStorage.removeItem(this._key);
+                localStorage.removeItem('migration_done');
 
-                // Clear individual items just in case
-                localStorage.clear();
+                // Clear individual items just in case (optional, but keep it if requested)
+                // localStorage.clear(); 
 
                 alert("Datos eliminados correctamente.");
                 location.reload();
@@ -182,11 +264,11 @@ function openGallery(categoryId, onPhotoAdded) {
     input.click();
 }
 
-function compressAndStore(file, categoryId, onPhotoAdded) {
+async function compressAndStore(file, categoryId, onPhotoAdded) {
     const reader = new FileReader();
     reader.onload = (e) => {
         const img = new Image();
-        img.onload = () => {
+        img.onload = async () => {
             // Compress to max 800px wide, quality 0.7
             const canvas = document.createElement('canvas');
             const MAX_W = 800;
@@ -202,8 +284,12 @@ function compressAndStore(file, categoryId, onPhotoAdded) {
             ctx.drawImage(img, 0, 0, w, h);
             const compressed = canvas.toDataURL('image/jpeg', 0.7);
 
-            const photo = PhotoStorage.addPhoto(categoryId, compressed);
-            if (onPhotoAdded) onPhotoAdded(photo);
+            try {
+                const photo = await PhotoStorage.addPhoto(categoryId, compressed);
+                if (onPhotoAdded) onPhotoAdded(photo);
+            } catch (error) {
+                console.error("Failed to add photo:", error);
+            }
         };
         img.src = e.target.result;
     };
@@ -213,8 +299,8 @@ function compressAndStore(file, categoryId, onPhotoAdded) {
 // ============================================================
 // PHOTO GRID RENDERER — For detail pages
 // ============================================================
-function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
-    const photos = PhotoStorage.getPhotos(categoryId);
+async function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
+    const photos = await PhotoStorage.getPhotos(categoryId);
     const grid = document.getElementById(gridContainerId);
     const emptyState = document.getElementById(emptyStateId);
 
@@ -236,7 +322,7 @@ function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
             <div class="absolute top-1 right-1 bg-green-500 rounded-full p-0.5 shadow-md">
                 <span class="material-symbols-outlined text-[12px] text-white font-bold">check</span>
             </div>
-            <button onclick="deletePhoto('${categoryId}', '${photo.id}')" 
+            <button onclick="handleDeletePhoto('${categoryId}', '${photo.id}')" 
                     class="absolute bottom-1 right-1 bg-red-500/80 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
                 <span class="material-symbols-outlined text-[14px]">delete</span>
             </button>
@@ -248,16 +334,16 @@ function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
     `).join('');
 }
 
-function deletePhoto(categoryId, photoId) {
+async function handleDeletePhoto(categoryId, photoId) {
     if (confirm('¿Eliminar esta foto?')) {
-        PhotoStorage.deletePhoto(categoryId, photoId);
-        renderPhotoGrid(categoryId, 'photo-grid', 'empty-state');
-        updatePhotoCountBadge(categoryId);
+        await PhotoStorage.deletePhoto(categoryId, photoId);
+        await renderPhotoGrid(categoryId, 'photo-grid', 'empty-state');
+        await updatePhotoCountBadge(categoryId);
     }
 }
 
-function updatePhotoCountBadge(categoryId) {
-    const count = PhotoStorage.getPhotoCount(categoryId);
+async function updatePhotoCountBadge(categoryId) {
+    const count = await PhotoStorage.getPhotoCount(categoryId);
     const badge = document.getElementById('photo-count-badge');
     if (badge) {
         badge.textContent = count === 1 ? '1 FOTO' : `${count} FOTOS`;
@@ -272,13 +358,18 @@ function updatePhotoCountBadge(categoryId) {
 // ============================================================
 // LISTADO — Dynamic photo count updater
 // ============================================================
-function updateListadoCounts() {
+async function updateListadoCounts() {
     const items = document.querySelectorAll('[data-category-id]');
+    if (items.length === 0) return;
+
+    // Ejecutar migración si es necesario
+    await PhotoStorage.migrateFromLocalStorage();
+
     let totalWithPhotos = 0;
 
-    items.forEach(item => {
+    for (const item of items) {
         const catId = item.getAttribute('data-category-id');
-        const count = PhotoStorage.getPhotoCount(catId);
+        const count = await PhotoStorage.getPhotoCount(catId);
         const badge = item.querySelector('.photo-count-badge');
         const iconContainer = item.querySelector('.category-icon');
 
@@ -300,7 +391,7 @@ function updateListadoCounts() {
                 iconContainer.className = 'w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center';
             }
         }
-    });
+    }
 
     // Update progress bar
     const progressBar = document.getElementById('progress-bar');
@@ -324,8 +415,8 @@ const ReportSync = {
         const projectData = ProjectData.getData();
         const allPhotos = [];
 
-        CATEGORIES.forEach(cat => {
-            const photos = PhotoStorage.getPhotos(cat.id);
+        for (const cat of CATEGORIES) {
+            const photos = await PhotoStorage.getPhotos(cat.id);
             photos.forEach((photo, index) => {
                 allPhotos.push({
                     category: cat.name,
@@ -334,7 +425,7 @@ const ReportSync = {
                     timestamp: photo.timestamp
                 });
             });
-        });
+        }
 
         if (allPhotos.length === 0) {
             alert("No hay fotos para guardar.");
