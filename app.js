@@ -1,7 +1,7 @@
 /**
  * App.js — Lógica compartida para la App de Informes Fotográficos
  * Sustentambiente Energía Solar
- * v2.0 - With Cloud Sync
+ * v2.0 - With Cloud Sync & IndexedDB
  */
 console.log("App.js v2.0 loaded");
 
@@ -26,9 +26,6 @@ const CATEGORIES = [
     { id: "transformador", name: "Transformador", folder: "detalle__transformador", icon: "more_horiz" },
 ];
 
-// ============================================================
-// PHOTO STORAGE — localStorage persistence
-// ============================================================
 // ============================================================
 // PHOTO STORAGE — IndexedDB persistence
 // ============================================================
@@ -68,7 +65,6 @@ const PhotoStorage = {
                 const request = store.getAll();
                 request.onsuccess = () => {
                     const allPhotos = request.result;
-                    // Filter by category in JS (IndexedDB could use an index, but this is simpler for now)
                     resolve(allPhotos.filter(p => p.categoryId === categoryId));
                 };
             });
@@ -121,20 +117,10 @@ const PhotoStorage = {
         return photos.length;
     },
 
-    async getAllCounts() {
-        const counts = {};
-        for (const cat of CATEGORIES) {
-            counts[cat.id] = await this.getPhotoCount(cat.id);
-        }
-        return counts;
-    },
-
-    // Migración de localStorage a IndexedDB
     async migrateFromLocalStorage() {
         const migratedKey = 'migration_done';
         if (localStorage.getItem(migratedKey)) return;
 
-        console.log("Iniciando migración de localStorage a IndexedDB...");
         for (const cat of CATEGORIES) {
             const key = `photos_${cat.id}`;
             const data = localStorage.getItem(key);
@@ -145,14 +131,12 @@ const PhotoStorage = {
                         await this.addPhoto(cat.id, p.data);
                     }
                     localStorage.removeItem(key);
-                    console.log(`Migradas ${photos.length} fotos de ${cat.id}`);
                 } catch (e) {
                     console.error(`Error migrando categoría ${cat.id}:`, e);
                 }
             }
         }
         localStorage.setItem(migratedKey, 'true');
-        console.log("Migración completada.");
     }
 };
 
@@ -192,23 +176,15 @@ const ProjectData = {
     async clearAll() {
         if (confirm("⚠️ ¿Estás seguro de BORRAR TODO?\n\nSe eliminarán todas las fotos y los datos del proyecto actual de forma permanente.")) {
             try {
-                // Clear IndexedDB photos
                 const db = await PhotoStorage.init();
                 if (db) {
                     const tx = db.transaction(PhotoStorage.STORE_NAME, 'readwrite');
                     tx.objectStore(PhotoStorage.STORE_NAME).clear();
-
-                    await new Promise((resolve) => {
-                        tx.oncomplete = resolve;
-                    });
+                    await new Promise((resolve) => { tx.oncomplete = resolve; });
                 }
 
-                // Clear project data and metadata
                 localStorage.removeItem(this._key);
                 localStorage.removeItem('migration_done');
-
-                // Clear individual items just in case (optional, but keep it if requested)
-                // localStorage.clear(); 
 
                 alert("Datos eliminados correctamente.");
                 location.reload();
@@ -227,14 +203,12 @@ function openCamera(categoryId, onPhotoAdded) {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
-    input.capture = 'environment'; // Cámara trasera
+    input.capture = 'environment';
     input.style.display = 'none';
 
     input.addEventListener('change', (e) => {
         const file = e.target.files[0];
         if (!file) return;
-
-        // Compress and store
         compressAndStore(file, categoryId, onPhotoAdded);
         document.body.removeChild(input);
     });
@@ -269,7 +243,6 @@ async function compressAndStore(file, categoryId, onPhotoAdded) {
     reader.onload = (e) => {
         const img = new Image();
         img.onload = async () => {
-            // Compress to max 800px wide, quality 0.7
             const canvas = document.createElement('canvas');
             const MAX_W = 800;
             let w = img.width;
@@ -312,7 +285,6 @@ async function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
         return;
     }
 
-    // Hide empty state, show grid
     if (emptyState) emptyState.style.display = 'none';
     grid.style.display = '';
 
@@ -362,7 +334,6 @@ async function updateListadoCounts() {
     const items = document.querySelectorAll('[data-category-id]');
     if (items.length === 0) return;
 
-    // Ejecutar migración si es necesario
     await PhotoStorage.migrateFromLocalStorage();
 
     let totalWithPhotos = 0;
@@ -383,7 +354,6 @@ async function updateListadoCounts() {
             }
         }
 
-        // Update icon color based on photo count
         if (iconContainer) {
             if (count > 0) {
                 iconContainer.className = 'w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center';
@@ -393,7 +363,6 @@ async function updateListadoCounts() {
         }
     }
 
-    // Update progress bar
     const progressBar = document.getElementById('progress-bar');
     const progressText = document.getElementById('progress-text');
     if (progressBar && progressText) {
@@ -404,14 +373,12 @@ async function updateListadoCounts() {
 }
 
 // ============================================================
-// SYNC MANAGER — Send data to Google Apps Script
+// SYNC MANAGER — Envío y Generación de PDF en la Nube
 // ============================================================
 const ReportSync = {
-    // URL del script de Google Apps Script proporcionada por el usuario
     GAS_URL: "https://script.google.com/macros/s/AKfycbwvzLhEzZhXo7XyIOBTG2LBQsSsNZyxZ1602KJx6ZSmit9xUfC3LBZ8EzH9ColsSyCPJQ/exec",
 
     async sync() {
-        // 1. Gather all data
         const projectData = ProjectData.getData();
         const allPhotos = [];
 
@@ -428,14 +395,12 @@ const ReportSync = {
         }
 
         if (allPhotos.length === 0) {
-            alert("No hay fotos para guardar.");
+            alert("⚠️ No hay fotos registradas para generar el informe.");
             return;
         }
 
-        // 2. Prepare payload
-        // Uses 'title' because that's where "Nombre del Proyecto" is stored in the new schema
         const folderName = `${projectData.date || 'SinFecha'} - ${projectData.title || 'Proyecto'} - ${projectData.inspectorName || 'Inspector'}`
-            .replace(/[/\\?%*:|"<>]/g, '-'); // Sanitize filename
+            .replace(/[/\\?%*:|"<>]/g, '-');
 
         const payload = {
             folderName: folderName,
@@ -443,33 +408,32 @@ const ReportSync = {
             photos: allPhotos
         };
 
-        // 3. Send to server
         try {
             const btn = document.getElementById('btn-sync');
-            const originalText = btn.innerHTML;
-            btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Subiendo...';
-            btn.disabled = true;
+            if (btn) {
+                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Compilando PDF...';
+                btn.disabled = true;
+            }
 
-            // Use text/plain to avoid CORS preflight (Simple Request)
             const response = await fetch(this.GAS_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'text/plain' },
                 body: JSON.stringify(payload)
             });
 
-            // GAS returns a redirect to the actual content, fetch follows it.
             const result = await response.json();
 
             if (result.status === 'success') {
-                alert(`✅ Informe guardado correctamente en Drive.\nCarpeta: ${folderName}\nArchivos: ${result.fileCount}`);
-                // Optional: Clear data after success? 
-                // ProjectData.clearAll(); 
+                alert(`✅ ¡Informe PDF generado con éxito en el Drive corporativo!\n\nCarpeta: ${folderName}`);
+                if (result.pdfUrl) {
+                    window.open(result.pdfUrl, '_blank');
+                }
             } else {
                 throw new Error(result.message || 'Error desconocido del script');
             }
         } catch (error) {
             console.error(error);
-            alert(`⚠️ El informe se envió, pero hubo un problema leyendo la respuesta.\n\nVerifica tu Google Drive.\n\nDetalle: ${error.message}`);
+            alert(`⚠️ Ocurrió un error al procesar el informe.\n\nDetalle: ${error.message}`);
         } finally {
             const btn = document.getElementById('btn-sync');
             if (btn) {
