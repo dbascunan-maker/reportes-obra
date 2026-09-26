@@ -5,7 +5,7 @@ function doPost(e) {
     var photos = data.photos;
     var metadata = data.metadata;
     
-    // ID de la carpeta principal de Google Drive configurada por ti
+    // ID de la carpeta principal de Google Drive configurada
     var folderId = "15-HgejfO7iVHI62yCi7x35FSfxbbdfpb"; 
     
     var mainFolder;
