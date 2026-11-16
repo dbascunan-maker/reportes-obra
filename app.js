@@ -1,13 +1,10 @@
 /**
  * App.js — Lógica compartida para la App de Informes Fotográficos
  * Sustentambiente Energía Solar
- * v2.3 - Fix definitivo Cámara/Galería iOS + Almacenamiento resiliente
+ * v2.4 - Botones nativos táctiles iOS + Respaldo dual de datos
  */
-console.log("App.js v2.3 loaded");
+console.log("App.js v2.4 loaded");
 
-// ============================================================
-// CONFIGURACIÓN DE CATEGORÍAS
-// ============================================================
 const CATEGORIES = [
     { id: "fachada", name: "Fachada", folder: "detalle__fachada", icon: "foundation" },
     { id: "punto_de_acceso", name: "Punto de acceso de la planta", folder: "detalle__punto_de_acceso", icon: "architecture" },
@@ -96,7 +93,7 @@ const PhotoStorage = {
                 const request = store.add(photo);
                 request.onsuccess = () => resolve(photo);
                 request.onerror = () => {
-                    alert('⚠️ No se pudo guardar la foto en el dispositivo.');
+                    alert('⚠️ No se pudo guardar la foto en el iPhone. Verifica que Safari no esté en Navegación Privada.');
                     reject(request.error);
                 };
             });
@@ -169,11 +166,22 @@ const PhotoStorage = {
 };
 
 // ============================================================
-// PROJECT DATA STORAGE — localStorage persistence
+// PROJECT DATA STORAGE — localStorage + Diagnóstico iOS
 // ============================================================
 const ProjectData = {
     _key: 'project_data',
     _memoryFallback: null,
+
+    checkStorageAvailable() {
+        try {
+            localStorage.setItem('__sa_test', '1');
+            localStorage.removeItem('__sa_test');
+            return true;
+        } catch (e) {
+            alert('⚠️ Safari está bloqueando el guardado de datos.\n\nRevisa en tu iPhone:\n1. Que Safari NO esté en "Navegación Privada" (barra oscura).\n2. Configuración > Apps > Safari > Avanzado > desactiva "Bloquear todas las cookies".');
+            return false;
+        }
+    },
 
     getData() {
         const defaults = {
@@ -199,14 +207,16 @@ const ProjectData = {
     },
 
     saveData(data) {
+        const current = this.getData();
+        const newData = { ...current, ...data };
+        this._memoryFallback = newData;
         try {
-            const current = this.getData();
-            const newData = { ...current, ...data };
-            this._memoryFallback = newData;
             localStorage.setItem(this._key, JSON.stringify(newData));
+            return true;
         } catch (e) {
             console.error('Error saving project data:', e);
-            alert('⚠️ Safari no permitió guardar los datos: ' + e.message);
+            alert('⚠️ No se pudieron guardar los datos en Safari: ' + e.message);
+            return false;
         }
     },
 
@@ -235,33 +245,70 @@ const ProjectData = {
 };
 
 // ============================================================
-// CAMERA & GALLERY CAPTURE — Compatible con iOS Safari
+// CONVERSIÓN AUTOMÁTICA A CONTROLES TÁCTILES NATIVOS PARA iOS
 // ============================================================
+function upgradeButtonsForIOS() {
+    const actionButtons = document.querySelectorAll('button[onclick*="openCamera"], button[onclick*="openGallery"]');
+    actionButtons.forEach((btn) => {
+        const onclickAttr = btn.getAttribute('onclick') || '';
+        const isCamera = onclickAttr.includes('openCamera');
+        const match = onclickAttr.match(/['"]([^'"]+)['"]/);
+        const categoryId = match ? match[1] : (typeof CATEGORY_ID !== 'undefined' ? CATEGORY_ID : '');
+
+        if (!categoryId) return;
+
+        // Reemplazamos <button> por <div> táctil con <input type="file"> encima para 100% compatibilidad iOS
+        const wrapper = document.createElement('div');
+        wrapper.className = btn.className;
+        wrapper.style.position = 'relative';
+        wrapper.style.overflow = 'hidden';
+        wrapper.style.cursor = 'pointer';
+        wrapper.innerHTML = btn.innerHTML;
+
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.setAttribute('accept', 'image/*');
+        if (isCamera) {
+            input.setAttribute('capture', 'environment');
+        } else {
+            input.multiple = true;
+        }
+        input.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; z-index:30; cursor:pointer; font-size:100px;';
+
+        input.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files || []);
+            if (files.length === 0) return;
+
+            files.forEach((file) => {
+                compressAndStore(file, categoryId, async (photo) => {
+                    if (typeof onPhotoAdded === 'function') {
+                        await onPhotoAdded(photo);
+                    } else {
+                        await renderPhotoGrid(categoryId, 'photo-grid', 'empty-state');
+                        await updatePhotoCountBadge(categoryId);
+                    }
+                });
+            });
+            input.value = '';
+        });
+
+        wrapper.appendChild(input);
+        btn.parentNode.replaceChild(wrapper, btn);
+    });
+}
+
+document.addEventListener('DOMContentLoaded', upgradeButtonsForIOS);
+
+// Respaldo en caso de llamada directa
 function openCamera(categoryId, onPhotoAdded) {
     const input = document.createElement('input');
     input.type = 'file';
     input.setAttribute('accept', 'image/*');
     input.setAttribute('capture', 'environment');
-    // Debe estar dentro del viewport para que iOS Safari permita abrir la cámara
-    input.style.position = 'fixed';
-    input.style.bottom = '0px';
-    input.style.right = '0px';
-    input.style.width = '1px';
-    input.style.height = '1px';
-    input.style.opacity = '0.01';
-    input.style.pointerEvents = 'none';
-    document.body.appendChild(input);
-
-    input.addEventListener('change', (e) => {
+    input.onchange = (e) => {
         const file = e.target.files && e.target.files[0];
-        if (file) {
-            compressAndStore(file, categoryId, onPhotoAdded);
-        }
-        setTimeout(() => {
-            if (input.parentNode) input.parentNode.removeChild(input);
-        }, 1500);
-    });
-
+        if (file) compressAndStore(file, categoryId, onPhotoAdded);
+    };
     input.click();
 }
 
@@ -270,32 +317,18 @@ function openGallery(categoryId, onPhotoAdded) {
     input.type = 'file';
     input.setAttribute('accept', 'image/*');
     input.multiple = true;
-    input.style.position = 'fixed';
-    input.style.bottom = '0px';
-    input.style.right = '0px';
-    input.style.width = '1px';
-    input.style.height = '1px';
-    input.style.opacity = '0.01';
-    input.style.pointerEvents = 'none';
-    document.body.appendChild(input);
-
-    input.addEventListener('change', (e) => {
-        const files = Array.from(e.target.files || []);
-        files.forEach(file => {
-            compressAndStore(file, categoryId, onPhotoAdded);
-        });
-        setTimeout(() => {
-            if (input.parentNode) input.parentNode.removeChild(input);
-        }, 1500);
-    });
-
+    input.onchange = (e) => {
+        Array.from(e.target.files || []).forEach(file => compressAndStore(file, categoryId, onPhotoAdded));
+    };
     input.click();
 }
 
 async function compressAndStore(file, categoryId, onPhotoAdded) {
     const reader = new FileReader();
+    reader.onerror = () => alert('⚠️ Error al leer la imagen seleccionada.');
     reader.onload = (e) => {
         const img = new Image();
+        img.onerror = () => alert('⚠️ Formato de imagen no compatible.');
         img.onload = async () => {
             const canvas = document.createElement('canvas');
             const MAX_W = 800;
@@ -313,7 +346,7 @@ async function compressAndStore(file, categoryId, onPhotoAdded) {
 
             try {
                 const photo = await PhotoStorage.addPhoto(categoryId, compressed);
-                if (onPhotoAdded) onPhotoAdded(photo);
+                if (onPhotoAdded) await onPhotoAdded(photo);
             } catch (error) {
                 console.error("Failed to add photo:", error);
             }
@@ -445,80 +478,4 @@ async function updateListadoCounts() {
     const progressText = document.getElementById('progress-text');
     if (progressBar && progressText) {
         const pct = Math.round((totalWithPhotos / CATEGORIES.length) * 100);
-        progressBar.style.width = pct + '%';
-        progressText.textContent = `Progreso de inspección: ${pct}%`;
-    }
-}
-
-// ============================================================
-// SYNC MANAGER — Envío y Generación de PDF en la Nube
-// ============================================================
-const ReportSync = {
-    GAS_URL: "https://script.google.com/macros/s/AKfycbwvzLhEzZhXo7XyIOBTG2LBQsSsNZyxZ1602KJx6ZSmit9xUfC3LBZ8EzH9ColsSyCPJQ/exec",
-
-    async sync() {
-        const projectData = ProjectData.getData();
-        const allPhotos = [];
-
-        for (const cat of CATEGORIES) {
-            const photos = await PhotoStorage.getPhotos(cat.id);
-            photos.forEach((photo, index) => {
-                allPhotos.push({
-                    category: cat.name,
-                    filename: `${cat.id}_${String(index + 1).padStart(2, '0')}.jpg`,
-                    data: photo.data,
-                    caption: photo.caption || "",
-                    timestamp: photo.timestamp
-                });
-            });
-        }
-
-        if (allPhotos.length === 0) {
-            alert("⚠️ No hay fotos registradas para generar el informe.");
-            return;
-        }
-
-        const folderName = `${projectData.date || 'SinFecha'} - ${projectData.title || 'Proyecto'} - ${projectData.inspectorName || 'Inspector'}`
-            .replace(/[/\\?%*:|"<>]/g, '-');
-
-        const payload = {
-            folderName: folderName,
-            metadata: projectData,
-            photos: allPhotos
-        };
-
-        try {
-            const btn = document.getElementById('btn-sync');
-            if (btn) {
-                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Compilando PDF...';
-                btn.disabled = true;
-            }
-
-            const response = await fetch(this.GAS_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain' },
-                body: JSON.stringify(payload)
-            });
-
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                alert(`✅ ¡Informe PDF generado con éxito en el Drive corporativo!\n\nCarpeta: ${folderName}`);
-                if (result.pdfUrl) {
-                    window.open(result.pdfUrl, '_blank');
-                }
-            } else {
-                throw new Error(result.message || 'Error desconocido del script');
-            }
-        } catch (error) {
-            console.error(error);
-            alert(`⚠️ Ocurrió un error al procesar el informe.\n\nDetalle: ${error.message}`);
-        } finally {
-            const btn = document.getElementById('btn-sync');
-            if (btn) {
-                btn.innerHTML = '<span class="material-symbols-outlined">cloud_upload</span> Guardar y Finalizar';
-                btn.disabled = false;
-            }
-        }
-    }
-};
+        progressBar.style.
