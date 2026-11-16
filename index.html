@@ -65,4 +65,553 @@
         </div>
         <div class="flex gap-3">
             <button onclick="ProjectData.clearAll()" title="Borrar proyecto actual"
-                class="bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-500 size-10 rounded-full flex
+                class="bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-500 size-10 rounded-full flex items-center justify-center transition-colors border border-red-200 dark:border-red-900/50">
+                <span class="material-symbols-outlined">delete</span>
+            </button>
+            <button onclick="openProfileModal()" title="Datos del Proyecto y Responsable"
+                class="bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 size-10 rounded-full flex items-center justify-center transition-colors">
+                <img src="logo.png" class="size-8 object-contain" alt="Logo">
+            </button>
+        </div>
+    </header>
+
+    <!-- Project Info Card -->
+    <div class="px-4 py-6 bg-white dark:bg-zinc-900/50 border-b border-zinc-200 dark:border-zinc-800">
+        <div class="flex items-center justify-between mb-2">
+            <h2 id="project-title" contenteditable="true"
+                class="text-lg font-bold border-b border-transparent hover:border-zinc-300 focus:border-primary focus:outline-none transition-colors"
+                spellcheck="false">Nombre de la Obra</h2>
+            <div class="flex items-center gap-2 text-zinc-500 text-sm">
+                <span class="material-symbols-outlined text-[18px]">calendar_today</span>
+                <input type="date" id="project-date"
+                    class="bg-transparent border-none p-0 text-zinc-500 text-sm focus:ring-0 cursor-pointer" />
+            </div>
+        </div>
+        <h3 id="project-subtitle" contenteditable="true"
+            class="text-sm font-medium text-zinc-600 dark:text-zinc-400 mb-3 border-b border-transparent hover:border-zinc-300 focus:border-primary focus:outline-none transition-colors"
+            spellcheck="false">Dirección de la Obra</h3>
+
+        <!-- Resumen rápido de N° Cliente y Coordenadas -->
+        <div id="project-meta-summary" onclick="openProfileModal()"
+            class="flex flex-wrap gap-2 mb-4 text-xs text-zinc-500 cursor-pointer">
+            <span id="badge-client-number" class="bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md hidden"></span>
+            <span id="badge-coordinates" class="bg-zinc-100 dark:bg-zinc-800 px-2.5 py-1 rounded-md hidden"></span>
+            <span id="badge-add-meta" class="text-primary font-medium flex items-center gap-1">
+                <span class="material-symbols-outlined text-[15px]">edit_location_alt</span>
+                Agregar N° Cliente / Coordenadas
+            </span>
+        </div>
+
+        <div class="w-full bg-zinc-200 dark:bg-zinc-800 h-2 rounded-full overflow-hidden">
+            <div class="bg-primary h-full transition-all duration-500" id="progress-bar" style="width: 0%"></div>
+        </div>
+        <p class="text-xs text-zinc-500 mt-2 font-medium" id="progress-text">Progreso de inspección: 0%</p>
+    </div>
+
+    <!-- Main Content: List View -->
+    <main class="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+        <!-- Item 1: Fachada -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__fachada/code.html" data-category-id="fachada">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">foundation</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Fachada</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 2: Punto de acceso -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__punto_de_acceso/code.html" data-category-id="punto_de_acceso">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">architecture</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Punto de acceso de la planta</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 3: Paneles solares -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__paneles_solares/code.html" data-category-id="paneles_solares">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">wall_art</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Paneles solares</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 4: Estructura -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__estructura/code.html" data-category-id="estructura">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">electrical_services</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Estructura</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 5: Canalización -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__canalización/code.html" data-category-id="canalizacion">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">plumbing</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Canalización</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 6: Cableado -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__cableado/code.html" data-category-id="cableado">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">mode_fan</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Cableado</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 7: Aterrizaje -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__aterrizaje/code.html" data-category-id="aterrizaje">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">roofing</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Aterrizaje</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 8: Inversor -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__inversor/code.html" data-category-id="inversor">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">home_repair_service</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Inversor</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 9: Tablero -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__tablero/code.html" data-category-id="tablero">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">potted_plant</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Tablero</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 10: Automáticos -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__automáticos/code.html" data-category-id="automaticos">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">health_and_safety</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Automáticos</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 11: Bastidor -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__bastidor/code.html" data-category-id="bastidor">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">cleaning_services</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Bastidor</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 12: Señalética -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__señalética/code.html" data-category-id="senaletica">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">fence</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Señalética</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 13: Perfil chile -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__perfil_chile/code.html" data-category-id="perfil_chile">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">format_paint</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Perfil chile</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 14: Medición a tierra -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__medición_a_tierra/code.html" data-category-id="medicion_a_tierra">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">carpenter</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Medición a tierra</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Item 15: Transformador -->
+        <a class="flex items-center justify-between p-4 bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 active:scale-[0.98] transition-all shadow-sm group"
+            href="detalle__transformador/code.html" data-category-id="transformador">
+            <div class="flex items-center gap-4">
+                <div
+                    class="w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center category-icon">
+                    <span class="material-symbols-outlined text-[28px]">more_horiz</span>
+                </div>
+                <div>
+                    <h3 class="font-bold text-[#1c130d] dark:text-zinc-100">Transformador</h3>
+                    <div class="flex items-center gap-2 mt-0.5">
+                        <span
+                            class="photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider">0
+                            FOTOS</span>
+                    </div>
+                </div>
+            </div>
+            <span
+                class="material-symbols-outlined text-zinc-400 group-hover:text-primary transition-colors">chevron_right</span>
+        </a>
+        <!-- Margin for footer button -->
+        <div class="h-24"></div>
+    </main>
+
+    <!-- Floating Footer Action -->
+    <div
+        class="fixed bottom-0 left-0 right-0 p-4 bg-white/80 dark:bg-background-dark/80 backdrop-blur-lg border-t border-zinc-200 dark:border-zinc-800">
+        <button id="btn-sync" onclick="ReportSync.sync()"
+            class="w-full bg-primary hover:bg-primary/90 text-white py-4 rounded-xl font-bold flex items-center justify-center gap-3 shadow-lg shadow-primary/20 active:scale-[0.99] transition-all">
+            <span class="material-symbols-outlined">cloud_upload</span>
+            Guardar y Finalizar
+        </button>
+    </div>
+
+    <script src="./app.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Cargar datos y activar guardado inmediato
+            loadProjectData();
+
+            const titleEl = document.getElementById('project-title');
+            const subtitleEl = document.getElementById('project-subtitle');
+            const dateEl = document.getElementById('project-date');
+
+            titleEl.addEventListener('input', saveProjectData);
+            titleEl.addEventListener('blur', saveProjectData);
+            subtitleEl.addEventListener('input', saveProjectData);
+            subtitleEl.addEventListener('blur', saveProjectData);
+            dateEl.addEventListener('change', saveProjectData);
+
+            // 2. Actualizar conteo de fotos de forma independiente
+            try {
+                await updateListadoCounts();
+            } catch (e) {
+                console.error("Error cargando conteos:", e);
+            }
+        });
+
+        function loadProjectData() {
+            const data = ProjectData.getData();
+
+            if (data.title === "Sustentambiente") {
+                data.title = "Nombre de la Obra";
+                ProjectData.saveData(data);
+            }
+
+            if (data.title) document.getElementById('project-title').textContent = data.title;
+            if (data.subtitle) document.getElementById('project-subtitle').textContent = data.subtitle;
+            if (data.date) document.getElementById('project-date').value = data.date;
+
+            // Modal fields
+            if (data.inspectorName !== undefined) document.getElementById('inspector-name').value = data.inspectorName;
+            if (data.inspectorRole !== undefined) document.getElementById('inspector-role').value = data.inspectorRole;
+            if (data.clientName !== undefined) document.getElementById('client-name-input').value = data.clientName;
+            if (data.clientNumber !== undefined) document.getElementById('client-number-input').value = data.clientNumber;
+            if (data.coordinates !== undefined) document.getElementById('coordinates-input').value = data.coordinates;
+
+            updateMetaBadges(data);
+        }
+
+        function updateMetaBadges(data) {
+            const badgeClient = document.getElementById('badge-client-number');
+            const badgeCoords = document.getElementById('badge-coordinates');
+            const badgeAdd    = document.getElementById('badge-add-meta');
+
+            let hasAny = false;
+
+            if (data.clientNumber && data.clientNumber.trim() !== "") {
+                badgeClient.textContent = "N° Cliente: " + data.clientNumber.trim();
+                badgeClient.classList.remove('hidden');
+                hasAny = true;
+            } else {
+                badgeClient.classList.add('hidden');
+            }
+
+            if (data.coordinates && data.coordinates.trim() !== "") {
+                badgeCoords.textContent = "GPS: " + data.coordinates.trim();
+                badgeCoords.classList.remove('hidden');
+                hasAny = true;
+            } else {
+                badgeCoords.classList.add('hidden');
+            }
+
+            if (hasAny) {
+                badgeAdd.classList.add('hidden');
+            } else {
+                badgeAdd.classList.remove('hidden');
+            }
+        }
+
+        function saveProjectData() {
+            ProjectData.saveData({
+                title: document.getElementById('project-title').textContent.trim(),
+                subtitle: document.getElementById('project-subtitle').textContent.trim(),
+                date: document.getElementById('project-date').value,
+            });
+        }
+
+        function openProfileModal() {
+            document.getElementById('profile-modal').classList.remove('hidden');
+            loadProjectData();
+        }
+
+        function closeProfileModal() {
+            document.getElementById('profile-modal').classList.add('hidden');
+        }
+
+        function saveProfile() {
+            const updated = {
+                inspectorName: document.getElementById('inspector-name').value,
+                inspectorRole: document.getElementById('inspector-role').value,
+                clientName: document.getElementById('client-name-input').value,
+                clientNumber: document.getElementById('client-number-input').value,
+                coordinates: document.getElementById('coordinates-input').value
+            };
+            ProjectData.saveData(updated);
+            updateMetaBadges(updated);
+            closeProfileModal();
+        }
+
+        function fetchCurrentGPS() {
+            const btn = document.getElementById('btn-gps');
+            const input = document.getElementById('coordinates-input');
+            if (!navigator.geolocation) {
+                alert("Tu navegador no soporta geolocalización.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<span class="material-symbols-outlined text-[18px] animate-spin">sync</span>';
+
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    const lat = pos.coords.latitude.toFixed(6);
+                    const lng = pos.coords.longitude.toFixed(6);
+                    input.value = `${lat}, ${lng}`;
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">my_location</span>';
+                },
+                (err) => {
+                    alert("No se pudo obtener la ubicación GPS. Verifica los permisos de ubicación en tu celular.");
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined text-[18px]">my_location</span>';
+                },
+                { enableHighAccuracy: true, timeout: 10000 }
+            );
+        }
+    </script>
+
+    <!-- Profile & Project Metadata Modal -->
+    <div id="profile-modal"
+        class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm hidden"
+        onclick="if(event.target === this) closeProfileModal()">
+        <div
+            class="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="px-6 py-4 border-b border-zinc-100 dark:border-zinc-800 flex justify-between items-center">
+                <h3 class="text-lg font-bold">Datos del Proyecto y Responsable</h3>
+                <button onclick="closeProfileModal()"
+                    class="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+            <div class="p-6 space-y-4 overflow-y-auto">
+                <div>
+                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Mandante / Cliente</label>
+                    <input type="text" id="client-name-input" placeholder="Ej. Constructora XYZ"
+                        class="w-full rounded-lg border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">N° de Cliente (Empalme / Distribuidora)</label>
+                    <input type="text" id="client-number-input" placeholder="Ej. 3600298"
+                        class="w-full rounded-lg border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Coordenadas (Lat, Lon o UTM)</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="coordinates-input" placeholder="Ej. -33.826386, -71.341632"
+                            class="flex-1 rounded-lg border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-primary focus:border-primary">
+                        <button type="button" id="btn-gps" onclick="fetchCurrentGPS()" title="Obtener GPS actual"
+                            class="px-3 bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-primary rounded-lg border border-zinc-300 dark:border-zinc-700 flex items-center justify-center transition-colors">
+                            <span class="material-symbols-outlined text-[18px]">my_location</span>
+                        </button>
+                    </div>
+                </div>
+                <hr class="border-zinc-100 dark:border-zinc-800">
+                <div>
+                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Nombre Inspector</label>
+                    <input type="text" id="inspector-name" placeholder="Ej. Diego Riveros"
+                        class="w-full rounded-lg border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-primary focus:border-primary">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-1">Cargo / Clase SEC</label>
+                    <input type="text" id="inspector-role" placeholder="Ej. Instalador Autorizado Clase B"
+                        class="w-full rounded-lg border-zinc-300 dark:border-zinc-700 dark:bg-zinc-800 focus:ring-primary focus:border-primary">
+                </div>
+                <button onclick="saveProfile()"
+                    class="w-full bg-primary hover:bg-orange-600 text-white font-bold py-3 rounded-xl mt-2 transition-colors">
+                    Guardar Cambios
+                </button>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
