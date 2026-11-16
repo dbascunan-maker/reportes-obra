@@ -1,9 +1,9 @@
 /**
  * App.js — Lógica compartida para la App de Informes Fotográficos
  * Sustentambiente Energía Solar
- * v2.0 - With Cloud Sync & IndexedDB
+ * v2.1 - Con Coordenadas, N° Cliente y Pie de Foto (Caption) por imagen
  */
-console.log("App.js v2.0 loaded");
+console.log("App.js v2.1 loaded");
 
 // ============================================================
 // CONFIGURACIÓN DE CATEGORÍAS
@@ -74,12 +74,13 @@ const PhotoStorage = {
         }
     },
 
-    async addPhoto(categoryId, photoData) {
+    async addPhoto(categoryId, photoData, caption = "") {
         const photos = await this.getPhotos(categoryId);
         const photo = {
             id: Date.now() + '_' + Math.random().toString(36).substr(2, 9),
             categoryId,
             data: photoData, // base64
+            caption: caption,
             timestamp: new Date().toISOString(),
             filename: `IMG_${String(photos.length + 1).padStart(3, '0')}.JPG`
         };
@@ -97,6 +98,26 @@ const PhotoStorage = {
         } catch (e) {
             console.error('Storage error:', e);
             throw e;
+        }
+    },
+
+    async updatePhotoCaption(photoId, newCaption) {
+        try {
+            const store = await this._getStore('readwrite');
+            return new Promise((resolve, reject) => {
+                const getReq = store.get(photoId);
+                getReq.onsuccess = () => {
+                    const photo = getReq.result;
+                    if (!photo) return resolve();
+                    photo.caption = newCaption;
+                    const putReq = store.put(photo);
+                    putReq.onsuccess = () => resolve(photo);
+                    putReq.onerror = () => reject(putReq.error);
+                };
+                getReq.onerror = () => reject(getReq.error);
+            });
+        } catch (e) {
+            console.error('Error updating caption:', e);
         }
     },
 
@@ -128,7 +149,7 @@ const PhotoStorage = {
                 try {
                     const photos = JSON.parse(data);
                     for (const p of photos) {
-                        await this.addPhoto(cat.id, p.data);
+                        await this.addPhoto(cat.id, p.data, p.caption || "");
                     }
                     localStorage.removeItem(key);
                 } catch (e) {
@@ -155,7 +176,9 @@ const ProjectData = {
                 date: new Date().toISOString().split('T')[0],
                 inspectorName: "",
                 inspectorRole: "",
-                clientName: ""
+                clientName: "",
+                clientNumber: "",
+                coordinates: ""
             };
         } catch (e) {
             console.error('Error reading project data:', e);
@@ -270,8 +293,17 @@ async function compressAndStore(file, categoryId, onPhotoAdded) {
 }
 
 // ============================================================
-// PHOTO GRID RENDERER — For detail pages
+// PHOTO GRID RENDERER — Con campo de descripción por foto
 // ============================================================
+function escapeHtmlAttr(str) {
+    if (!str) return "";
+    return str.replace(/&/g, "&")
+              .replace(/"/g, """)
+              .replace(/'/g, "'")
+              .replace(/</g, "<")
+              .replace(/>/g, ">");
+}
+
 async function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
     const photos = await PhotoStorage.getPhotos(categoryId);
     const grid = document.getElementById(gridContainerId);
@@ -289,21 +321,35 @@ async function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
     grid.style.display = '';
 
     grid.innerHTML = photos.map(photo => `
-        <div class="aspect-square bg-gray-200 rounded-lg overflow-hidden relative group" id="photo-${photo.id}">
-            <img src="${photo.data}" alt="${photo.filename}" class="object-cover w-full h-full" />
-            <div class="absolute top-1 right-1 bg-green-500 rounded-full p-0.5 shadow-md">
-                <span class="material-symbols-outlined text-[12px] text-white font-bold">check</span>
+        <div class="bg-white dark:bg-zinc-900 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col" id="photo-${photo.id}">
+            <div class="aspect-square bg-gray-200 relative group">
+                <img src="${photo.data}" alt="${photo.filename}" class="object-cover w-full h-full" />
+                <div class="absolute top-1.5 right-1.5 bg-green-500 rounded-full p-0.5 shadow-md">
+                    <span class="material-symbols-outlined text-[12px] text-white font-bold">check</span>
+                </div>
+                <button onclick="handleDeletePhoto('${categoryId}', '${photo.id}')" 
+                        class="absolute top-1.5 left-1.5 bg-red-500/90 text-white rounded-full p-1 shadow-md transition-opacity">
+                    <span class="material-symbols-outlined text-[14px]">delete</span>
+                </button>
+                <div class="absolute bottom-0 left-0 right-0 bg-black/55 text-white text-[10px] px-2 py-1 flex justify-between">
+                    <span>${photo.filename}</span>
+                    <span>${new Date(photo.timestamp).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
             </div>
-            <button onclick="handleDeletePhoto('${categoryId}', '${photo.id}')" 
-                    class="absolute bottom-1 right-1 bg-red-500/80 text-white rounded-full p-1 shadow-md opacity-0 group-hover:opacity-100 group-active:opacity-100 transition-opacity">
-                <span class="material-symbols-outlined text-[14px]">delete</span>
-            </button>
-            <div class="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-[10px] px-2 py-1 flex justify-between">
-                <span>${photo.filename}</span>
-                <span>${new Date(photo.timestamp).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span>
+            <div class="p-1.5 bg-zinc-50 dark:bg-zinc-800/80 border-t border-zinc-200 dark:border-zinc-700">
+                <input type="text"
+                    value="${escapeHtmlAttr(photo.caption || '')}"
+                    placeholder="Pie de foto (opcional)..."
+                    onchange="handleUpdateCaption('${photo.id}', this.value)"
+                    onblur="handleUpdateCaption('${photo.id}', this.value)"
+                    class="w-full text-xs bg-white dark:bg-zinc-900 text-[#1c130d] dark:text-zinc-100 rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1 focus:ring-1 focus:ring-primary focus:border-primary" />
             </div>
         </div>
     `).join('');
+}
+
+async function handleUpdateCaption(photoId, newCaption) {
+    await PhotoStorage.updatePhotoCaption(photoId, newCaption.trim());
 }
 
 async function handleDeletePhoto(categoryId, photoId) {
@@ -389,6 +435,7 @@ const ReportSync = {
                     category: cat.name,
                     filename: `${cat.id}_${String(index + 1).padStart(2, '0')}.jpg`,
                     data: photo.data,
+                    caption: photo.caption || "",
                     timestamp: photo.timestamp
                 });
             });
