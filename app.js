@@ -1,9 +1,9 @@
 /**
  * App.js — Lógica compartida para la App de Informes Fotográficos
  * Sustentambiente Energía Solar
- * v2.4 - Botones nativos táctiles iOS + Respaldo dual de datos
+ * v2.5 - Construcción DOM segura + Cámara nativa iOS
  */
-console.log("App.js v2.4 loaded");
+console.log("App.js v2.5 loaded");
 
 const CATEGORIES = [
     { id: "fachada", name: "Fachada", folder: "detalle__fachada", icon: "foundation" },
@@ -20,16 +20,16 @@ const CATEGORIES = [
     { id: "senaletica", name: "Señalética", folder: "detalle__señalética", icon: "fence" },
     { id: "perfil_chile", name: "Perfil chile", folder: "detalle__perfil_chile", icon: "format_paint" },
     { id: "medicion_a_tierra", name: "Medición a tierra", folder: "detalle__medición_a_tierra", icon: "carpenter" },
-    { id: "transformador", name: "Transformador", folder: "detalle__transformador", icon: "more_horiz" },
+    { id: "transformador", name: "Transformador", folder: "detalle__transformador", icon: "more_horiz" }
 ];
 
 // ============================================================
 // PHOTO STORAGE — IndexedDB persistence
 // ============================================================
 const PhotoStorage = {
-    DB_NAME: 'PhotoAppDB',
+    DB_NAME: "PhotoAppDB",
     DB_VERSION: 1,
-    STORE_NAME: 'photos',
+    STORE_NAME: "photos",
     _db: null,
 
     async init() {
@@ -45,7 +45,7 @@ const PhotoStorage = {
                 request.onupgradeneeded = (e) => {
                     const db = e.target.result;
                     if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-                        db.createObjectStore(this.STORE_NAME, { keyPath: 'id' });
+                        db.createObjectStore(this.STORE_NAME, { keyPath: "id" });
                     }
                 };
             } catch (err) {
@@ -54,7 +54,7 @@ const PhotoStorage = {
         });
     },
 
-    async _getStore(mode = 'readonly') {
+    async _getStore(mode = "readonly") {
         const db = await this.init();
         return db.transaction(this.STORE_NAME, mode).objectStore(this.STORE_NAME);
     },
@@ -71,7 +71,7 @@ const PhotoStorage = {
                 request.onerror = () => resolve([]);
             });
         } catch (e) {
-            console.error('Error reading photos:', e);
+            console.error("Error reading photos:", e);
             return [];
         }
     },
@@ -79,34 +79,34 @@ const PhotoStorage = {
     async addPhoto(categoryId, photoData, caption = "") {
         const photos = await this.getPhotos(categoryId);
         const photo = {
-            id: Date.now() + '_' + Math.random().toString(36).substr(2, 9),
-            categoryId,
+            id: Date.now() + "_" + Math.random().toString(36).substr(2, 9),
+            categoryId: categoryId,
             data: photoData,
             caption: caption,
             timestamp: new Date().toISOString(),
-            filename: `IMG_${String(photos.length + 1).padStart(3, '0')}.JPG`
+            filename: "IMG_" + String(photos.length + 1).padStart(3, "0") + ".JPG"
         };
 
         try {
-            const store = await this._getStore('readwrite');
+            const store = await this._getStore("readwrite");
             return new Promise((resolve, reject) => {
                 const request = store.add(photo);
                 request.onsuccess = () => resolve(photo);
                 request.onerror = () => {
-                    alert('⚠️ No se pudo guardar la foto en el iPhone. Verifica que Safari no esté en Navegación Privada.');
+                    alert("No se pudo guardar la foto en el dispositivo. Verifica que Safari no esté en Navegación Privada.");
                     reject(request.error);
                 };
             });
         } catch (e) {
-            console.error('Storage error:', e);
-            alert('⚠️ Error de almacenamiento en iOS: ' + e.message);
+            console.error("Storage error:", e);
+            alert("Error de almacenamiento: " + e.message);
             throw e;
         }
     },
 
     async updatePhotoCaption(photoId, newCaption) {
         try {
-            const store = await this._getStore('readwrite');
+            const store = await this._getStore("readwrite");
             return new Promise((resolve, reject) => {
                 const getReq = store.get(photoId);
                 getReq.onsuccess = () => {
@@ -120,20 +120,20 @@ const PhotoStorage = {
                 getReq.onerror = () => reject(getReq.error);
             });
         } catch (e) {
-            console.error('Error updating caption:', e);
+            console.error("Error updating caption:", e);
         }
     },
 
     async deletePhoto(categoryId, photoId) {
         try {
-            const store = await this._getStore('readwrite');
+            const store = await this._getStore("readwrite");
             return new Promise((resolve) => {
                 const request = store.delete(photoId);
                 request.onsuccess = () => resolve();
                 request.onerror = () => resolve();
             });
         } catch (e) {
-            console.error('Delete error:', e);
+            console.error("Delete error:", e);
         }
     },
 
@@ -144,11 +144,11 @@ const PhotoStorage = {
 
     async migrateFromLocalStorage() {
         try {
-            const migratedKey = 'migration_done';
+            const migratedKey = "migration_done";
             if (localStorage.getItem(migratedKey)) return;
 
             for (const cat of CATEGORIES) {
-                const key = `photos_${cat.id}`;
+                const key = "photos_" + cat.id;
                 const data = localStorage.getItem(key);
                 if (data) {
                     const photos = JSON.parse(data);
@@ -158,9 +158,9 @@ const PhotoStorage = {
                     localStorage.removeItem(key);
                 }
             }
-            localStorage.setItem(migratedKey, 'true');
+            localStorage.setItem(migratedKey, "true");
         } catch (e) {
-            console.error('Migration error:', e);
+            console.error("Migration error:", e);
         }
     }
 };
@@ -169,16 +169,16 @@ const PhotoStorage = {
 // PROJECT DATA STORAGE — localStorage + Diagnóstico iOS
 // ============================================================
 const ProjectData = {
-    _key: 'project_data',
+    _key: "project_data",
     _memoryFallback: null,
 
     checkStorageAvailable() {
         try {
-            localStorage.setItem('__sa_test', '1');
-            localStorage.removeItem('__sa_test');
+            localStorage.setItem("__sa_test", "1");
+            localStorage.removeItem("__sa_test");
             return true;
         } catch (e) {
-            alert('⚠️ Safari está bloqueando el guardado de datos.\n\nRevisa en tu iPhone:\n1. Que Safari NO esté en "Navegación Privada" (barra oscura).\n2. Configuración > Apps > Safari > Avanzado > desactiva "Bloquear todas las cookies".');
+            alert("Safari está bloqueando el guardado de datos. Asegúrate de no estar en Navegación Privada.");
             return false;
         }
     },
@@ -187,7 +187,7 @@ const ProjectData = {
         const defaults = {
             title: "Nombre de la Obra",
             subtitle: "Instalación Fotovoltaica",
-            date: new Date().toISOString().split('T')[0],
+            date: new Date().toISOString().split("T")[0],
             inspectorName: "",
             inspectorRole: "",
             clientName: "",
@@ -197,41 +197,41 @@ const ProjectData = {
         try {
             const raw = localStorage.getItem(this._key);
             if (raw) {
-                return { ...defaults, ...JSON.parse(raw) };
+                return Object.assign({}, defaults, JSON.parse(raw));
             }
-            return this._memoryFallback ? { ...defaults, ...this._memoryFallback } : defaults;
+            return this._memoryFallback ? Object.assign({}, defaults, this._memoryFallback) : defaults;
         } catch (e) {
-            console.error('Error reading project data:', e);
-            return this._memoryFallback ? { ...defaults, ...this._memoryFallback } : defaults;
+            console.error("Error reading project data:", e);
+            return this._memoryFallback ? Object.assign({}, defaults, this._memoryFallback) : defaults;
         }
     },
 
     saveData(data) {
         const current = this.getData();
-        const newData = { ...current, ...data };
+        const newData = Object.assign({}, current, data);
         this._memoryFallback = newData;
         try {
             localStorage.setItem(this._key, JSON.stringify(newData));
             return true;
         } catch (e) {
-            console.error('Error saving project data:', e);
-            alert('⚠️ No se pudieron guardar los datos en Safari: ' + e.message);
+            console.error("Error saving project data:", e);
+            alert("No se pudieron guardar los datos en Safari: " + e.message);
             return false;
         }
     },
 
     async clearAll() {
-        if (confirm("⚠️ ¿Estás seguro de BORRAR TODO?\n\nSe eliminarán todas las fotos y los datos del proyecto actual de forma permanente.")) {
+        if (confirm("¿Estás seguro de BORRAR TODO? Se eliminarán todas las fotos y los datos del proyecto actual.")) {
             try {
                 const db = await PhotoStorage.init();
                 if (db) {
-                    const tx = db.transaction(PhotoStorage.STORE_NAME, 'readwrite');
+                    const tx = db.transaction(PhotoStorage.STORE_NAME, "readwrite");
                     tx.objectStore(PhotoStorage.STORE_NAME).clear();
                     await new Promise((resolve) => { tx.oncomplete = resolve; });
                 }
 
                 localStorage.removeItem(this._key);
-                localStorage.removeItem('migration_done');
+                localStorage.removeItem("migration_done");
                 this._memoryFallback = null;
 
                 alert("Datos eliminados correctamente.");
@@ -250,46 +250,52 @@ const ProjectData = {
 function upgradeButtonsForIOS() {
     const actionButtons = document.querySelectorAll('button[onclick*="openCamera"], button[onclick*="openGallery"]');
     actionButtons.forEach((btn) => {
-        const onclickAttr = btn.getAttribute('onclick') || '';
-        const isCamera = onclickAttr.includes('openCamera');
+        const onclickAttr = btn.getAttribute("onclick") || "";
+        const isCamera = onclickAttr.includes("openCamera");
         const match = onclickAttr.match(/['"]([^'"]+)['"]/);
-        const categoryId = match ? match[1] : (typeof CATEGORY_ID !== 'undefined' ? CATEGORY_ID : '');
+        const categoryId = match ? match[1] : (typeof CATEGORY_ID !== "undefined" ? CATEGORY_ID : "");
 
         if (!categoryId) return;
 
-        // Reemplazamos <button> por <div> táctil con <input type="file"> encima para 100% compatibilidad iOS
-        const wrapper = document.createElement('div');
+        const wrapper = document.createElement("div");
         wrapper.className = btn.className;
-        wrapper.style.position = 'relative';
-        wrapper.style.overflow = 'hidden';
-        wrapper.style.cursor = 'pointer';
+        wrapper.style.position = "relative";
+        wrapper.style.overflow = "hidden";
+        wrapper.style.cursor = "pointer";
         wrapper.innerHTML = btn.innerHTML;
 
-        const input = document.createElement('input');
-        input.type = 'file';
-        input.setAttribute('accept', 'image/*');
+        const input = document.createElement("input");
+        input.type = "file";
+        input.setAttribute("accept", "image/*");
         if (isCamera) {
-            input.setAttribute('capture', 'environment');
+            input.setAttribute("capture", "environment");
         } else {
             input.multiple = true;
         }
-        input.style.cssText = 'position:absolute; top:0; left:0; width:100%; height:100%; opacity:0; z-index:30; cursor:pointer; font-size:100px;';
+        input.style.position = "absolute";
+        input.style.top = "0";
+        input.style.left = "0";
+        input.style.width = "100%";
+        input.style.height = "100%";
+        input.style.opacity = "0";
+        input.style.zIndex = "30";
+        input.style.cursor = "pointer";
 
-        input.addEventListener('change', (e) => {
+        input.addEventListener("change", (e) => {
             const files = Array.from(e.target.files || []);
             if (files.length === 0) return;
 
             files.forEach((file) => {
                 compressAndStore(file, categoryId, async (photo) => {
-                    if (typeof onPhotoAdded === 'function') {
+                    if (typeof onPhotoAdded === "function") {
                         await onPhotoAdded(photo);
                     } else {
-                        await renderPhotoGrid(categoryId, 'photo-grid', 'empty-state');
+                        await renderPhotoGrid(categoryId, "photo-grid", "empty-state");
                         await updatePhotoCountBadge(categoryId);
                     }
                 });
             });
-            input.value = '';
+            input.value = "";
         });
 
         wrapper.appendChild(input);
@@ -297,14 +303,13 @@ function upgradeButtonsForIOS() {
     });
 }
 
-document.addEventListener('DOMContentLoaded', upgradeButtonsForIOS);
+document.addEventListener("DOMContentLoaded", upgradeButtonsForIOS);
 
-// Respaldo en caso de llamada directa
 function openCamera(categoryId, onPhotoAdded) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.setAttribute('accept', 'image/*');
-    input.setAttribute('capture', 'environment');
+    const input = document.createElement("input");
+    input.type = "file";
+    input.setAttribute("accept", "image/*");
+    input.setAttribute("capture", "environment");
     input.onchange = (e) => {
         const file = e.target.files && e.target.files[0];
         if (file) compressAndStore(file, categoryId, onPhotoAdded);
@@ -313,9 +318,9 @@ function openCamera(categoryId, onPhotoAdded) {
 }
 
 function openGallery(categoryId, onPhotoAdded) {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.setAttribute('accept', 'image/*');
+    const input = document.createElement("input");
+    input.type = "file";
+    input.setAttribute("accept", "image/*");
     input.multiple = true;
     input.onchange = (e) => {
         Array.from(e.target.files || []).forEach(file => compressAndStore(file, categoryId, onPhotoAdded));
@@ -325,12 +330,12 @@ function openGallery(categoryId, onPhotoAdded) {
 
 async function compressAndStore(file, categoryId, onPhotoAdded) {
     const reader = new FileReader();
-    reader.onerror = () => alert('⚠️ Error al leer la imagen seleccionada.');
+    reader.onerror = () => alert("Error al leer la imagen seleccionada.");
     reader.onload = (e) => {
         const img = new Image();
-        img.onerror = () => alert('⚠️ Formato de imagen no compatible.');
+        img.onerror = () => alert("Formato de imagen no compatible.");
         img.onload = async () => {
-            const canvas = document.createElement('canvas');
+            const canvas = document.createElement("canvas");
             const MAX_W = 800;
             let w = img.width;
             let h = img.height;
@@ -340,9 +345,9 @@ async function compressAndStore(file, categoryId, onPhotoAdded) {
             }
             canvas.width = w;
             canvas.height = h;
-            const ctx = canvas.getContext('2d');
+            const ctx = canvas.getContext("2d");
             ctx.drawImage(img, 0, 0, w, h);
-            const compressed = canvas.toDataURL('image/jpeg', 0.7);
+            const compressed = canvas.toDataURL("image/jpeg", 0.7);
 
             try {
                 const photo = await PhotoStorage.addPhoto(categoryId, compressed);
@@ -357,17 +362,8 @@ async function compressAndStore(file, categoryId, onPhotoAdded) {
 }
 
 // ============================================================
-// PHOTO GRID RENDERER — Con campo de descripción por foto
+// PHOTO GRID RENDERER — Construcción DOM limpia y segura
 // ============================================================
-function escapeHtmlAttr(str) {
-    if (!str) return "";
-    return str.replace(/&/g, "&")
-              .replace(/"/g, """)
-              .replace(/'/g, "'")
-              .replace(/</g, "<")
-              .replace(/>/g, ">");
-}
-
 async function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
     const photos = await PhotoStorage.getPhotos(categoryId);
     const grid = document.getElementById(gridContainerId);
@@ -376,41 +372,65 @@ async function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
     if (!grid) return;
 
     if (photos.length === 0) {
-        grid.style.display = 'none';
-        if (emptyState) emptyState.style.display = '';
+        grid.style.display = "none";
+        if (emptyState) emptyState.style.display = "";
         return;
     }
 
-    if (emptyState) emptyState.style.display = 'none';
-    grid.className = 'grid grid-cols-2 gap-3';
-    grid.style.display = '';
+    if (emptyState) emptyState.style.display = "none";
+    grid.className = "grid grid-cols-2 gap-3";
+    grid.style.display = "";
+    grid.innerHTML = "";
 
-    grid.innerHTML = photos.map(photo => `
-        <div class="bg-white dark:bg-zinc-900 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col" id="photo-${photo.id}">
-            <div class="aspect-square bg-gray-200 relative group">
-                <img src="${photo.data}" alt="${photo.filename}" class="object-cover w-full h-full" />
-                <div class="absolute top-1.5 right-1.5 bg-green-500 rounded-full p-0.5 shadow-md">
-                    <span class="material-symbols-outlined text-[12px] text-white font-bold">check</span>
-                </div>
-                <button onclick="handleDeletePhoto('${categoryId}', '${photo.id}')" 
-                        class="absolute top-1.5 left-1.5 bg-red-500/90 text-white rounded-full p-1 shadow-md transition-opacity">
-                    <span class="material-symbols-outlined text-[14px]">delete</span>
-                </button>
-                <div class="absolute bottom-0 left-0 right-0 bg-black/55 text-white text-[10px] px-2 py-1 flex justify-between">
-                    <span>${photo.filename}</span>
-                    <span>${new Date(photo.timestamp).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' })}</span>
-                </div>
-            </div>
-            <div class="p-1.5 bg-zinc-50 dark:bg-zinc-800/80 border-t border-zinc-200 dark:border-zinc-700">
-                <input type="text"
-                    value="${escapeHtmlAttr(photo.caption || '')}"
-                    placeholder="Pie de foto (opcional)..."
-                    onchange="handleUpdateCaption('${photo.id}', this.value)"
-                    onblur="handleUpdateCaption('${photo.id}', this.value)"
-                    class="w-full text-xs bg-white dark:bg-zinc-900 text-[#1c130d] dark:text-zinc-100 rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1.5 focus:ring-1 focus:ring-primary focus:border-primary" />
-            </div>
-        </div>
-    `).join('');
+    photos.forEach((photo) => {
+        const card = document.createElement("div");
+        card.className = "bg-white dark:bg-zinc-900 rounded-lg overflow-hidden border border-zinc-200 dark:border-zinc-800 shadow-sm flex flex-col";
+        card.id = "photo-" + photo.id;
+
+        const imgBox = document.createElement("div");
+        imgBox.className = "aspect-square bg-gray-200 relative group";
+
+        const img = document.createElement("img");
+        img.src = photo.data;
+        img.alt = photo.filename;
+        img.className = "object-cover w-full h-full";
+
+        const checkBadge = document.createElement("div");
+        checkBadge.className = "absolute top-1.5 right-1.5 bg-green-500 rounded-full p-0.5 shadow-md";
+        checkBadge.innerHTML = '<span class="material-symbols-outlined text-[12px] text-white font-bold">check</span>';
+
+        const delBtn = document.createElement("button");
+        delBtn.type = "button";
+        delBtn.className = "absolute top-1.5 left-1.5 bg-red-500/90 text-white rounded-full p-1 shadow-md";
+        delBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">delete</span>';
+        delBtn.addEventListener("click", () => handleDeletePhoto(categoryId, photo.id));
+
+        const infoBar = document.createElement("div");
+        infoBar.className = "absolute bottom-0 left-0 right-0 bg-black/55 text-white text-[10px] px-2 py-1 flex justify-between";
+        const timeStr = new Date(photo.timestamp).toLocaleTimeString("es", { hour: "2-digit", minute: "2-digit" });
+        infoBar.innerHTML = "<span>" + photo.filename + "</span><span>" + timeStr + "</span>";
+
+        imgBox.appendChild(img);
+        imgBox.appendChild(checkBadge);
+        imgBox.appendChild(delBtn);
+        imgBox.appendChild(infoBar);
+
+        const captionBox = document.createElement("div");
+        captionBox.className = "p-1.5 bg-zinc-50 dark:bg-zinc-800/80 border-t border-zinc-200 dark:border-zinc-700";
+
+        const captionInput = document.createElement("input");
+        captionInput.type = "text";
+        captionInput.value = photo.caption || "";
+        captionInput.placeholder = "Pie de foto (opcional)...";
+        captionInput.className = "w-full text-xs bg-white dark:bg-zinc-900 text-[#1c130d] dark:text-zinc-100 rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1.5 focus:ring-1 focus:ring-primary focus:border-primary";
+        captionInput.addEventListener("change", () => handleUpdateCaption(photo.id, captionInput.value));
+        captionInput.addEventListener("blur", () => handleUpdateCaption(photo.id, captionInput.value));
+
+        captionBox.appendChild(captionInput);
+        card.appendChild(imgBox);
+        card.appendChild(captionBox);
+        grid.appendChild(card);
+    });
 }
 
 async function handleUpdateCaption(photoId, newCaption) {
@@ -418,22 +438,22 @@ async function handleUpdateCaption(photoId, newCaption) {
 }
 
 async function handleDeletePhoto(categoryId, photoId) {
-    if (confirm('¿Eliminar esta foto?')) {
+    if (confirm("¿Eliminar esta foto?")) {
         await PhotoStorage.deletePhoto(categoryId, photoId);
-        await renderPhotoGrid(categoryId, 'photo-grid', 'empty-state');
+        await renderPhotoGrid(categoryId, "photo-grid", "empty-state");
         await updatePhotoCountBadge(categoryId);
     }
 }
 
 async function updatePhotoCountBadge(categoryId) {
     const count = await PhotoStorage.getPhotoCount(categoryId);
-    const badge = document.getElementById('photo-count-badge');
+    const badge = document.getElementById("photo-count-badge");
     if (badge) {
-        badge.textContent = count === 1 ? '1 FOTO' : `${count} FOTOS`;
+        badge.textContent = count === 1 ? "1 FOTO" : count + " FOTOS";
         if (count > 0) {
-            badge.className = 'bg-primary/20 text-primary px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider';
+            badge.className = "bg-primary/20 text-primary px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider";
         } else {
-            badge.className = 'bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider';
+            badge.className = "bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider";
         }
     }
 }
@@ -442,7 +462,7 @@ async function updatePhotoCountBadge(categoryId) {
 // LISTADO — Dynamic photo count updater
 // ============================================================
 async function updateListadoCounts() {
-    const items = document.querySelectorAll('[data-category-id]');
+    const items = document.querySelectorAll("[data-category-id]");
     if (items.length === 0) return;
 
     await PhotoStorage.migrateFromLocalStorage();
@@ -450,32 +470,108 @@ async function updateListadoCounts() {
     let totalWithPhotos = 0;
 
     for (const item of items) {
-        const catId = item.getAttribute('data-category-id');
+        const catId = item.getAttribute("data-category-id");
         const count = await PhotoStorage.getPhotoCount(catId);
-        const badge = item.querySelector('.photo-count-badge');
-        const iconContainer = item.querySelector('.category-icon');
+        const badge = item.querySelector(".photo-count-badge");
+        const iconContainer = item.querySelector(".category-icon");
 
         if (badge) {
-            badge.textContent = count === 1 ? '1 FOTO' : `${count} FOTOS`;
+            badge.textContent = count === 1 ? "1 FOTO" : count + " FOTOS";
             if (count > 0) {
-                badge.className = 'photo-count-badge bg-primary/20 text-primary px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider';
+                badge.className = "photo-count-badge bg-primary/20 text-primary px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider";
                 totalWithPhotos++;
             } else {
-                badge.className = 'photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider';
+                badge.className = "photo-count-badge bg-zinc-200 dark:bg-zinc-700 text-zinc-500 px-2 py-0.5 rounded text-xs font-bold uppercase tracking-wider";
             }
         }
 
         if (iconContainer) {
             if (count > 0) {
-                iconContainer.className = 'w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center';
+                iconContainer.className = "w-12 h-12 rounded-lg bg-primary/10 text-primary flex items-center justify-center";
             } else {
-                iconContainer.className = 'w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center';
+                iconContainer.className = "w-12 h-12 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-zinc-500 flex items-center justify-center";
             }
         }
     }
 
-    const progressBar = document.getElementById('progress-bar');
-    const progressText = document.getElementById('progress-text');
+    const progressBar = document.getElementById("progress-bar");
+    const progressText = document.getElementById("progress-text");
     if (progressBar && progressText) {
         const pct = Math.round((totalWithPhotos / CATEGORIES.length) * 100);
-        progressBar.style.
+        progressBar.style.width = pct + "%";
+        progressText.textContent = "Progreso de inspección: " + pct + "%";
+    }
+}
+
+// ============================================================
+// SYNC MANAGER — Envío y Generación de PDF en la Nube
+// ============================================================
+const ReportSync = {
+    GAS_URL: "https://script.google.com/macros/s/AKfycbwvzLhEzZhXo7XyIOBTG2LBQsSsNZyxZ1602KJx6ZSmit9xUfC3LBZ8EzH9ColsSyCPJQ/exec",
+
+    async sync() {
+        const projectData = ProjectData.getData();
+        const allPhotos = [];
+
+        for (const cat of CATEGORIES) {
+            const photos = await PhotoStorage.getPhotos(cat.id);
+            photos.forEach((photo, index) => {
+                allPhotos.push({
+                    category: cat.name,
+                    filename: cat.id + "_" + String(index + 1).padStart(2, "0") + ".jpg",
+                    data: photo.data,
+                    caption: photo.caption || "",
+                    timestamp: photo.timestamp
+                });
+            });
+        }
+
+        if (allPhotos.length === 0) {
+            alert("No hay fotos registradas para generar el informe.");
+            return;
+        }
+
+        const rawFolder = (projectData.date || "SinFecha") + " - " + (projectData.title || "Proyecto") + " - " + (projectData.inspectorName || "Inspector");
+        const folderName = rawFolder.replace(/[/\\?%*:|"<>]/g, "-");
+
+        const payload = {
+            folderName: folderName,
+            metadata: projectData,
+            photos: allPhotos
+        };
+
+        try {
+            const btn = document.getElementById("btn-sync");
+            if (btn) {
+                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Compilando PDF...';
+                btn.disabled = true;
+            }
+
+            const response = await fetch(this.GAS_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (result.status === "success") {
+                alert("¡Informe PDF generado con éxito en el Drive corporativo!\n\nCarpeta: " + folderName);
+                if (result.pdfUrl) {
+                    window.open(result.pdfUrl, "_blank");
+                }
+            } else {
+                throw new Error(result.message || "Error desconocido del script");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Ocurrió un error al procesar el informe.\n\nDetalle: " + error.message);
+        } finally {
+            const btn = document.getElementById("btn-sync");
+            if (btn) {
+                btn.innerHTML = '<span class="material-symbols-outlined">cloud_upload</span> Guardar y Finalizar';
+                btn.disabled = false;
+            }
+        }
+    }
+};
