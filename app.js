@@ -1,9 +1,9 @@
 /**
  * App.js — Lógica compartida para la App de Informes Fotográficos
  * Sustentambiente Energía Solar
- * v2.6 - Subida secuencial anti-timeout iOS + Construcción DOM segura
+ * v2.7 - URL Corporativa conectada + Subida secuencial anti-timeout iOS
  */
-console.log("App.js v2.6 loaded");
+console.log("App.js v2.7 loaded");
 
 const CATEGORIES = [
     { id: "fachada", name: "Fachada", folder: "detalle__fachada", icon: "foundation" },
@@ -507,11 +507,12 @@ async function updateListadoCounts() {
 // SYNC MANAGER — Subida secuencial (1 foto por petición) + PDF
 // ============================================================
 const ReportSync = {
-    GAS_URL: "https://script.google.com/macros/s/AKfycbwvzLhEzZhXo7XyIOBTG2LBQsSsNZyxZ1602KJx6ZSmit9xUfC3LBZ8EzH9ColsSyCPJQ/exec",
+    GAS_URL: "https://script.google.com/a/macros/sustentambiente.cl/s/AKfycbwbvt0g9Vnp0eMJMH9BwW-5X2-dYQWmVYCS_dmxGYjg_k0-7swS3sXi2Z-jhGzN7DjiCA/exec",
 
     async postStep(bodyObj) {
         const response = await fetch(this.GAS_URL, {
             method: "POST",
+            credentials: "omit",
             redirect: "follow",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
             body: JSON.stringify(bodyObj)
