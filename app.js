@@ -1,9 +1,9 @@
 /**
  * App.js — Lógica compartida para la App de Informes Fotográficos
  * Sustentambiente Energía Solar
- * v2.2 - Fix Cámara iOS Safari + Diagnóstico de Almacenamiento
+ * v2.3 - Fix definitivo Cámara/Galería iOS + Almacenamiento resiliente
  */
-console.log("App.js v2.2 loaded");
+console.log("App.js v2.3 loaded");
 
 // ============================================================
 // CONFIGURACIÓN DE CATEGORÍAS
@@ -38,18 +38,22 @@ const PhotoStorage = {
     async init() {
         if (this._db) return this._db;
         return new Promise((resolve, reject) => {
-            const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
-            request.onerror = () => reject(request.error);
-            request.onsuccess = () => {
-                this._db = request.result;
-                resolve(this._db);
-            };
-            request.onupgradeneeded = (e) => {
-                const db = e.target.result;
-                if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-                    db.createObjectStore(this.STORE_NAME, { keyPath: 'id' });
-                }
-            };
+            try {
+                const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => {
+                    this._db = request.result;
+                    resolve(this._db);
+                };
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+                        db.createObjectStore(this.STORE_NAME, { keyPath: 'id' });
+                    }
+                };
+            } catch (err) {
+                reject(err);
+            }
         });
     },
 
@@ -64,9 +68,10 @@ const PhotoStorage = {
             return new Promise((resolve) => {
                 const request = store.getAll();
                 request.onsuccess = () => {
-                    const allPhotos = request.result;
+                    const allPhotos = request.result || [];
                     resolve(allPhotos.filter(p => p.categoryId === categoryId));
                 };
+                request.onerror = () => resolve([]);
             });
         } catch (e) {
             console.error('Error reading photos:', e);
@@ -91,13 +96,13 @@ const PhotoStorage = {
                 const request = store.add(photo);
                 request.onsuccess = () => resolve(photo);
                 request.onerror = () => {
-                    alert('⚠️ Error al guardar la foto en el iPhone. Verifica que no estés en Navegación Privada.');
+                    alert('⚠️ No se pudo guardar la foto en el dispositivo.');
                     reject(request.error);
                 };
             });
         } catch (e) {
             console.error('Storage error:', e);
-            alert('⚠️ No se pudo acceder al almacenamiento del teléfono: ' + e.message);
+            alert('⚠️ Error de almacenamiento en iOS: ' + e.message);
             throw e;
         }
     },
@@ -128,6 +133,7 @@ const PhotoStorage = {
             return new Promise((resolve) => {
                 const request = store.delete(photoId);
                 request.onsuccess = () => resolve();
+                request.onerror = () => resolve();
             });
         } catch (e) {
             console.error('Delete error:', e);
@@ -200,7 +206,7 @@ const ProjectData = {
             localStorage.setItem(this._key, JSON.stringify(newData));
         } catch (e) {
             console.error('Error saving project data:', e);
-            alert('⚠️ Safari bloqueó el guardado de datos. Asegúrate de abrir la app desde el enlace https:// en Safari normal (no en Navegación Privada).');
+            alert('⚠️ Safari no permitió guardar los datos: ' + e.message);
         }
     },
 
@@ -229,62 +235,61 @@ const ProjectData = {
 };
 
 // ============================================================
-// CAMERA & GALLERY CAPTURE — Compatible con iOS Safari / WebKit
+// CAMERA & GALLERY CAPTURE — Compatible con iOS Safari
 // ============================================================
-let _cameraInput = null;
-let _galleryInput = null;
-
 function openCamera(categoryId, onPhotoAdded) {
-    if (!_cameraInput) {
-        _cameraInput = document.createElement('input');
-        _cameraInput.type = 'file';
-        _cameraInput.setAttribute('accept', 'image/*');
-        _cameraInput.setAttribute('capture', 'environment');
-        // En iOS Safari NO se debe usar display:none porque bloquea la cámara
-        _cameraInput.style.position = 'fixed';
-        _cameraInput.style.top = '-100px';
-        _cameraInput.style.left = '-100px';
-        _cameraInput.style.width = '1px';
-        _cameraInput.style.height = '1px';
-        _cameraInput.style.opacity = '0.01';
-        document.body.appendChild(_cameraInput);
-    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.setAttribute('accept', 'image/*');
+    input.setAttribute('capture', 'environment');
+    // Debe estar dentro del viewport para que iOS Safari permita abrir la cámara
+    input.style.position = 'fixed';
+    input.style.bottom = '0px';
+    input.style.right = '0px';
+    input.style.width = '1px';
+    input.style.height = '1px';
+    input.style.opacity = '0.01';
+    input.style.pointerEvents = 'none';
+    document.body.appendChild(input);
 
-    _cameraInput.value = '';
-    _cameraInput.onchange = (e) => {
+    input.addEventListener('change', (e) => {
         const file = e.target.files && e.target.files[0];
-        if (!file) return;
-        compressAndStore(file, categoryId, onPhotoAdded);
-    };
+        if (file) {
+            compressAndStore(file, categoryId, onPhotoAdded);
+        }
+        setTimeout(() => {
+            if (input.parentNode) input.parentNode.removeChild(input);
+        }, 1500);
+    });
 
-    _cameraInput.click();
+    input.click();
 }
 
 function openGallery(categoryId, onPhotoAdded) {
-    if (!_galleryInput) {
-        _galleryInput = document.createElement('input');
-        _galleryInput.type = 'file';
-        _galleryInput.setAttribute('accept', 'image/*');
-        _galleryInput.multiple = true;
-        _galleryInput.style.position = 'fixed';
-        _galleryInput.style.top = '-100px';
-        _galleryInput.style.left = '-100px';
-        _galleryInput.style.width = '1px';
-        _galleryInput.style.height = '1px';
-        _galleryInput.style.opacity = '0.01';
-        document.body.appendChild(_galleryInput);
-    }
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.setAttribute('accept', 'image/*');
+    input.multiple = true;
+    input.style.position = 'fixed';
+    input.style.bottom = '0px';
+    input.style.right = '0px';
+    input.style.width = '1px';
+    input.style.height = '1px';
+    input.style.opacity = '0.01';
+    input.style.pointerEvents = 'none';
+    document.body.appendChild(input);
 
-    _galleryInput.value = '';
-    _galleryInput.onchange = (e) => {
+    input.addEventListener('change', (e) => {
         const files = Array.from(e.target.files || []);
-        if (files.length === 0) return;
         files.forEach(file => {
             compressAndStore(file, categoryId, onPhotoAdded);
         });
-    };
+        setTimeout(() => {
+            if (input.parentNode) input.parentNode.removeChild(input);
+        }, 1500);
+    });
 
-    _galleryInput.click();
+    input.click();
 }
 
 async function compressAndStore(file, categoryId, onPhotoAdded) {
@@ -344,6 +349,7 @@ async function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
     }
 
     if (emptyState) emptyState.style.display = 'none';
+    grid.className = 'grid grid-cols-2 gap-3';
     grid.style.display = '';
 
     grid.innerHTML = photos.map(photo => `
@@ -368,7 +374,7 @@ async function renderPhotoGrid(categoryId, gridContainerId, emptyStateId) {
                     placeholder="Pie de foto (opcional)..."
                     onchange="handleUpdateCaption('${photo.id}', this.value)"
                     onblur="handleUpdateCaption('${photo.id}', this.value)"
-                    class="w-full text-xs bg-white dark:bg-zinc-900 text-[#1c130d] dark:text-zinc-100 rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1 focus:ring-1 focus:ring-primary focus:border-primary" />
+                    class="w-full text-xs bg-white dark:bg-zinc-900 text-[#1c130d] dark:text-zinc-100 rounded border border-zinc-300 dark:border-zinc-700 px-2 py-1.5 focus:ring-1 focus:ring-primary focus:border-primary" />
             </div>
         </div>
     `).join('');
