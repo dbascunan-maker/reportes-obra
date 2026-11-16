@@ -1,9 +1,9 @@
 /**
  * App.js — Lógica compartida para la App de Informes Fotográficos
  * Sustentambiente Energía Solar
- * v2.5 - Construcción DOM segura + Cámara nativa iOS
+ * v2.6 - Subida secuencial anti-timeout iOS + Construcción DOM segura
  */
-console.log("App.js v2.5 loaded");
+console.log("App.js v2.6 loaded");
 
 const CATEGORIES = [
     { id: "fachada", name: "Fachada", folder: "detalle__fachada", icon: "foundation" },
@@ -93,7 +93,7 @@ const PhotoStorage = {
                 const request = store.add(photo);
                 request.onsuccess = () => resolve(photo);
                 request.onerror = () => {
-                    alert("No se pudo guardar la foto en el dispositivo. Verifica que Safari no esté en Navegación Privada.");
+                    alert("No se pudo guardar la foto en el dispositivo.");
                     reject(request.error);
                 };
             });
@@ -504,10 +504,25 @@ async function updateListadoCounts() {
 }
 
 // ============================================================
-// SYNC MANAGER — Envío y Generación de PDF en la Nube
+// SYNC MANAGER — Subida secuencial (1 foto por petición) + PDF
 // ============================================================
 const ReportSync = {
     GAS_URL: "https://script.google.com/macros/s/AKfycbwvzLhEzZhXo7XyIOBTG2LBQsSsNZyxZ1602KJx6ZSmit9xUfC3LBZ8EzH9ColsSyCPJQ/exec",
+
+    async postStep(bodyObj) {
+        const response = await fetch(this.GAS_URL, {
+            method: "POST",
+            redirect: "follow",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(bodyObj)
+        });
+        const text = await response.text();
+        try {
+            return JSON.parse(text);
+        } catch (e) {
+            throw new Error("Respuesta inválida del servidor Google. Verifica los permisos del script.");
+        }
+    },
 
     async sync() {
         const projectData = ProjectData.getData();
@@ -533,41 +548,76 @@ const ReportSync = {
 
         const rawFolder = (projectData.date || "SinFecha") + " - " + (projectData.title || "Proyecto") + " - " + (projectData.inspectorName || "Inspector");
         const folderName = rawFolder.replace(/[/\\?%*:|"<>]/g, "-");
-
-        const payload = {
-            folderName: folderName,
-            metadata: projectData,
-            photos: allPhotos
-        };
+        const btn = document.getElementById("btn-sync");
 
         try {
-            const btn = document.getElementById("btn-sync");
-            if (btn) {
-                btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Compilando PDF...';
-                btn.disabled = true;
-            }
+            if (btn) btn.disabled = true;
 
-            const response = await fetch(this.GAS_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify(payload)
+            // PASO 1: Crear carpeta en Google Drive
+            if (btn) btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Creando carpeta en Drive...';
+            const initRes = await this.postStep({
+                action: "init",
+                folderName: folderName,
+                metadata: projectData
             });
 
-            const result = await response.json();
+            if (initRes.status !== "success") {
+                throw new Error(initRes.message || "Error al crear carpeta en Drive");
+            }
 
-            if (result.status === "success") {
+            const folderId = initRes.folderId;
+            const photoRefs = [];
+
+            // PASO 2: Subir las fotografías una por una
+            for (let i = 0; i < allPhotos.length; i++) {
+                const p = allPhotos[i];
+                if (btn) {
+                    btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Subiendo foto ' + (i + 1) + ' de ' + allPhotos.length + '...';
+                }
+
+                const upRes = await this.postStep({
+                    action: "uploadPhoto",
+                    folderId: folderId,
+                    category: p.category,
+                    filename: p.filename,
+                    caption: p.caption,
+                    data: p.data
+                });
+
+                if (upRes.status !== "success") {
+                    throw new Error("Error subiendo " + p.filename + ": " + (upRes.message || ""));
+                }
+
+                photoRefs.push({
+                    fileId: upRes.fileId,
+                    category: p.category,
+                    filename: p.filename,
+                    caption: p.caption
+                });
+            }
+
+            // PASO 3: Compilar el PDF corporativo
+            if (btn) btn.innerHTML = '<span class="material-symbols-outlined animate-spin">sync</span> Generando informe PDF...';
+            const pdfRes = await this.postStep({
+                action: "buildPdf",
+                folderId: folderId,
+                folderName: folderName,
+                metadata: projectData,
+                photoRefs: photoRefs
+            });
+
+            if (pdfRes.status === "success") {
                 alert("¡Informe PDF generado con éxito en el Drive corporativo!\n\nCarpeta: " + folderName);
-                if (result.pdfUrl) {
-                    window.open(result.pdfUrl, "_blank");
+                if (pdfRes.pdfUrl) {
+                    window.open(pdfRes.pdfUrl, "_blank");
                 }
             } else {
-                throw new Error(result.message || "Error desconocido del script");
+                throw new Error(pdfRes.message || "Error al compilar PDF");
             }
         } catch (error) {
             console.error(error);
             alert("Ocurrió un error al procesar el informe.\n\nDetalle: " + error.message);
         } finally {
-            const btn = document.getElementById("btn-sync");
             if (btn) {
                 btn.innerHTML = '<span class="material-symbols-outlined">cloud_upload</span> Guardar y Finalizar';
                 btn.disabled = false;
